@@ -37,10 +37,13 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 
 ## Authors
 
-Anton Velikodny
-Brandon Umansky
-Chris Gomez
-Gage Aschenbrenner
+- [Anton Velikodny](https://github.com/Anton-Velikodnyy) 
+
+- [Brandon Umansky](https://github.com/brumansky)
+
+- [Chris Gomez](https://github.com/afryingpan)
+
+- [Gage Aschenbrenner](https://github.com/no0no)
 
 ## License
 
