@@ -3,6 +3,10 @@ Term project utilizing AR and facial recognition to create a new social media ex
 
 ## Getting Started
 
+Keep an eye on the issue tracker, issues should be dealt with how you see fit. Feel free to create new issues, milestones, and edits. 
+
+Everyone has their own branch, push and submit pull requests to those to ensure the master branch only contains finished and approved work. 
+
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
 ## Prerequisites
