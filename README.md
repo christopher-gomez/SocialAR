@@ -31,7 +31,11 @@ until finished
 
 ## Built With
 
-List of technologies used to build will go here/
+- [Vuforia](https://vuforia.com/) - *AR SDK*
+- [Unity](https://unity3d.com/) - *3D Game Engine*
+- [OpenCV](https://github.com/opencv/opencv) - *Image Processing*
+- [facematch](https://github.com/louisondumont/facematch) - *Unoffical wrapper for Facebook's Facial Recognition*
+- [Facebook SDK for Unity](https://developers.facebook.com/docs/unity/) - *Facebook SDK developed for Unity*
 
 Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests.
 
