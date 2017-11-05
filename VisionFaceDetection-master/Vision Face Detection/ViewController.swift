@@ -55,7 +55,7 @@ final class ViewController: UIViewController {
         shapeLayer.lineWidth = 2.0
         
         //needs to filp coordinate system for Vision
-        shapeLayer.setAffineTransform(CGAffineTransform(scaleX: -1, y: -1))
+        shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
         
         view.layer.addSublayer(shapeLayer)
     }
