@@ -35,11 +35,10 @@ until finished
 
 ## Built With
 
-- [Vuforia](https://vuforia.com/) - *AR SDK*
-- [Unity](https://unity3d.com/) - *3D Game Engine*
-- [OpenCV](https://github.com/opencv/opencv) - *Image Processing*
+- [Swift](https://developer.apple.com/swift/) - *Native iOS App*
+- [Vision](https://developer.apple.com/documentation/vision) - *High-performance image analysis and computer vision Framework*
 - [fbrecog](https://github.com/samj1912/fbrecog) - *Unoffical python wrapper for Facebook's Facial Recognition*
-- [Facebook SDK for Unity](https://developers.facebook.com/docs/unity/) - *Facebook SDK developed for Unity*
+- [Facebook SDK for iOS](https://developers.facebook.com/docs/unity/) - *Facebook SDK developed for iOS*
 
 Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests.
 

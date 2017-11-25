@@ -41,6 +41,7 @@ final class ViewController: UIViewController {
         session?.startRunning()
     }
     
+<<<<<<< HEAD
     @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
         if let swipeGesture = gesture as? UISwipeGestureRecognizer {
             switch swipeGesture.direction {
@@ -55,6 +56,27 @@ final class ViewController: UIViewController {
                 break
             }
         }
+=======
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer?.frame = view.frame
+        shapeLayer.frame = view.frame
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard let previewLayer = previewLayer else { return }
+        
+        view.layer.addSublayer(previewLayer)
+        
+        shapeLayer.strokeColor = UIColor.red.cgColor
+        shapeLayer.lineWidth = 2.0
+        
+        //needs to filp coordinate system for Vision
+        shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
+        
+        view.layer.addSublayer(shapeLayer)
+>>>>>>> 09e06fe4b422138de2e903e3952cbd33b24a80e8
     }
     
     func sessionPrepare() {
