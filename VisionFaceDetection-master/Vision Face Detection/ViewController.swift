@@ -14,7 +14,12 @@ final class ViewController: UIViewController {
     var session: AVCaptureSession?
     let shapeLayer = CAShapeLayer()
     
+    var circularOutline = CAShapeLayer()
+    
     let labelLayer = UIView()
+    let btnLayer = UIView()
+    
+    var recognize = false
 
     let faceDetection = VNDetectFaceRectanglesRequest()
     let faceLandmarks = VNDetectFaceLandmarksRequest()
@@ -34,68 +39,101 @@ final class ViewController: UIViewController {
         return AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back)
     }()
     
+    // This method executes as soon as the app is done loading assets and src
     override func viewDidLoad() {
+        
+        // super
         super.viewDidLoad()
         
+        // set up gesture support
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
         self.view.addGestureRecognizer(swipeDown)
         
+        // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
         sessionPrepare()
+        
+        // start the the feed
         session?.startRunning()
         
     }
     
-    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
-        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
-            switch swipeGesture.direction {
-            case UISwipeGestureRecognizerDirection.down:
-                DispatchQueue.main.async {
-                    self.shapeLayer.sublayers?.removeAll()
-                    for view in self.labelLayer.subviews {
-                        view.removeFromSuperview()
-                    }
-                }
-            default:
-                break
-            }
-        }
-    }
+    // This method lets the app know what our layer bounds are
     override func viewDidLayoutSubviews() {
+        
+        // super
         super.viewDidLayoutSubviews()
+        
+        // We need the camera layer, recognition layer, various UI layers
         previewLayer?.frame = view.frame
         labelLayer.frame = view.frame
+        btnLayer.frame = view.frame
         shapeLayer.frame = view.frame
     }
     
+    // This method executes after viewWillAppear(), to methods down from viewDidLoad()
     override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        guard let previewLayer = previewLayer else { return }
         
+        // super
+        super.viewDidAppear(animated)
+        
+        // Set up the camera feed layer
+        guard let previewLayer = previewLayer else { return }
         view.layer.addSublayer(previewLayer)
         
+        // Set up the Vision detection layer
         shapeLayer.strokeColor = UIColor.red.cgColor
         shapeLayer.lineWidth = 2.0
-        
-        //needs to filp coordinate system for Vision
         shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
-        
+        view.layer.addSublayer(shapeLayer)
+
+        // Add the label layer
         self.view.addSubview(labelLayer)
         
-        view.layer.addSublayer(shapeLayer)
-        
+        // Set up the button / button layer
         let btnCapture = UIButton(type: .custom)
-        btnCapture.frame = CGRect(x: 160, y: 100, width: 50, height: 50)
-        btnCapture.layer.cornerRadius = 0.5 * btnCapture.bounds.size.width
-        btnCapture.backgroundColor = UIColor.white
+        let screenSize: CGPoint = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90)
+        btnCapture.frame = CGRect(x: screenSize.x, y:screenSize.y, width: 100, height: 100)
+        btnCapture.layer.cornerRadius = 0.5*btnCapture.bounds.size.width
+        btnCapture.center = screenSize
+        btnCapture.backgroundColor = UIColor.clear
         btnCapture.clipsToBounds = true
-        btnCapture.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
         btnCapture.tag = 1
-        self.view.addSubview(btnCapture)
+        btnCapture.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
+        
+        // This circle path doesnt do anything yet, I eventually want to make a circle with a hole in it like snapchat, turn the circle rim blue when recognition is happening
+        let circlePath = UIBezierPath(arcCenter: screenSize, radius: CGFloat(20), startAngle: CGFloat(0), endAngle:CGFloat(Double.pi * 2), clockwise: true)
+        
+        circularOutline.path = circlePath.cgPath
+        setOutlineColor(recognition: self.recognize)
+        circularOutline.lineWidth = 2.5
+        
+        self.btnLayer.layer.addSublayer(circularOutline)
+        
+        // Set up a blur effect on the button
+        let blur = UIBlurEffect(style: UIBlurEffectStyle.regular)
+        let blurView = UIVisualEffectView(effect: blur)
+        
+        blurView.frame = CGRect(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90, width: 100, height: 100)
+        blurView.center = screenSize
+        blurView.clipsToBounds = true
+        blurView.layer.cornerRadius = 0.5*btnCapture.bounds.size.width
+        blurView.tag = 2
+        
+        // Add the blur to the button layer
+        self.btnLayer.addSubview(blurView)
+        
+        // Add the button to the button layer
+        self.btnLayer.addSubview(btnCapture)
+        
+        // add the button layer to the main view
+        self.view.addSubview(btnLayer)
     }
     
+    // Gets and sets up the camera and feed
     func sessionPrepare() {
         session = AVCaptureSession()
+        
         guard let session = session, let captureDevice = backCamera else { return }
         
         do {
@@ -126,10 +164,79 @@ final class ViewController: UIViewController {
         }
     }
     
+    // This method defines gesture support actions
+    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
+        
+        // if the user swipes in any direction
+        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
+            
+            // which direction
+            switch swipeGesture.direction {
+                
+            // if down, get rid of the recognition UI
+            case UISwipeGestureRecognizerDirection.down:
+                DispatchQueue.main.async {
+                    self.shapeLayer.sublayers?.removeAll()
+                    for view in self.labelLayer.subviews {
+                        view.removeFromSuperview()
+                    }
+                }
+                break
+            default:
+                break
+            }
+        }
+    }
+    
+    // Button color changes depending on current status of recognition
+    func setOutlineColor(recognition: Bool) {
+        
+        switch recognition {
+            case true:
+                
+                // change the fill color
+                circularOutline.fillColor = UIColor.blue.cgColor
+                
+                // you can change the stroke color
+                circularOutline.strokeColor = UIColor.blue.cgColor
+                break
+            case false:
+                
+                // change the fill color
+                circularOutline.fillColor = UIColor.clear.cgColor
+                
+                // you can change the stroke color
+                circularOutline.strokeColor = UIColor.clear.cgColor
+                break
+        }
+        
+    }
+    
+    // Set up UI button responses
     @objc func buttonAction(sender: UIButton!) {
-        var btnsendtag: UIButton = sender
+        let btnsendtag: UIButton = sender
         if btnsendtag.tag == 1 {
-            //do anything here
+            switch recognize {
+                
+                // Sometimes this case needs to run twice to execute the dispatchqueue for some reason, can't figure out why but the swipe down method works for getting rid of recognition UI no matter what
+                case true:
+                    recognize = false
+                    setOutlineColor(recognition: recognize)
+                    do {
+                        DispatchQueue.main.async {
+                            self.shapeLayer.sublayers?.removeAll()
+                            for view in self.labelLayer.subviews {
+                                view.removeFromSuperview()
+                            }
+                        }
+                    }
+                    break
+                case false:
+                    recognize = true
+                    setOutlineColor(recognition: recognize)
+                    break
+                
+            }
         }
     }
     
@@ -147,7 +254,9 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         //leftMirrored for front camera
         let ciImageWithOrientation = ciImage.oriented(forExifOrientation: Int32(UIImageOrientation.leftMirrored.rawValue))
         
-        detectFace(on: ciImageWithOrientation)
+        if recognize {
+            detectFace(on: ciImageWithOrientation)
+        }
     }
         
 }
