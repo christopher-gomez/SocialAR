@@ -14,6 +14,8 @@ final class ViewController: UIViewController {
     var session: AVCaptureSession?
     let shapeLayer = CAShapeLayer()
     
+    let labelLayer = UIView()
+
     let faceDetection = VNDetectFaceRectanglesRequest()
     let faceLandmarks = VNDetectFaceLandmarksRequest()
     let faceLandmarksDetectionRequest = VNSequenceRequestHandler()
@@ -34,11 +36,14 @@ final class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
         self.view.addGestureRecognizer(swipeDown)
+        
         sessionPrepare()
         session?.startRunning()
+        
     }
     
     @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
@@ -47,7 +52,7 @@ final class ViewController: UIViewController {
             case UISwipeGestureRecognizerDirection.down:
                 DispatchQueue.main.async {
                     self.shapeLayer.sublayers?.removeAll()
-                    for view in self.view.subviews {
+                    for view in self.labelLayer.subviews {
                         view.removeFromSuperview()
                     }
                 }
@@ -59,6 +64,7 @@ final class ViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         previewLayer?.frame = view.frame
+        labelLayer.frame = view.frame
         shapeLayer.frame = view.frame
     }
     
@@ -74,7 +80,18 @@ final class ViewController: UIViewController {
         //needs to filp coordinate system for Vision
         shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
         
+        self.view.addSubview(labelLayer)
+        
         view.layer.addSublayer(shapeLayer)
+        
+        let btnCapture = UIButton(type: .custom)
+        btnCapture.frame = CGRect(x: 160, y: 100, width: 50, height: 50)
+        btnCapture.layer.cornerRadius = 0.5 * btnCapture.bounds.size.width
+        btnCapture.backgroundColor = UIColor.white
+        btnCapture.clipsToBounds = true
+        btnCapture.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
+        btnCapture.tag = 1
+        self.view.addSubview(btnCapture)
     }
     
     func sessionPrepare() {
@@ -109,6 +126,13 @@ final class ViewController: UIViewController {
         }
     }
     
+    @objc func buttonAction(sender: UIButton!) {
+        var btnsendtag: UIButton = sender
+        if btnsendtag.tag == 1 {
+            //do anything here
+        }
+    }
+    
 }
 
 extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -139,7 +163,7 @@ extension ViewController {
                 
                 DispatchQueue.main.async {
                     self.shapeLayer.sublayers?.removeAll()
-                    for view in self.view.subviews {
+                    for view in self.labelLayer.subviews {
                         view.removeFromSuperview()
                     }
                 }
@@ -202,7 +226,7 @@ extension ViewController {
         label.center = CGPoint(x: screenSize.size.width/2, y:screenSize.size.height/10)
         label.textAlignment = .center
         label.text = "I am a test label"
-        self.view.addSubview(label)
+        self.labelLayer.addSubview(label)
     }
     
     func convertPointsForFace(_ landmark: VNFaceLandmarkRegion2D?, _ boundingBox: CGRect) {
