@@ -41,7 +41,6 @@ final class ViewController: UIViewController {
         session?.startRunning()
     }
     
-<<<<<<< HEAD
     @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
         if let swipeGesture = gesture as? UISwipeGestureRecognizer {
             switch swipeGesture.direction {
@@ -56,7 +55,7 @@ final class ViewController: UIViewController {
                 break
             }
         }
-=======
+    }
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         previewLayer?.frame = view.frame
@@ -76,7 +75,6 @@ final class ViewController: UIViewController {
         shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
         
         view.layer.addSublayer(shapeLayer)
->>>>>>> 09e06fe4b422138de2e903e3952cbd33b24a80e8
     }
     
     func sessionPrepare() {
@@ -109,27 +107,6 @@ final class ViewController: UIViewController {
         } catch {
             print("can't setup session")
         }
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        previewLayer?.frame = view.frame
-        shapeLayer.frame = view.frame
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        guard let previewLayer = previewLayer else { return }
-        
-        view.layer.addSublayer(previewLayer)
-        
-        shapeLayer.strokeColor = UIColor.red.cgColor
-        shapeLayer.lineWidth = 2.0
-        
-        //needs to filp coordinate system for Vision
-        shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
-        
-        view.layer.addSublayer(shapeLayer)
     }
     
 }
@@ -206,34 +183,23 @@ extension ViewController {
                         let outerLips = observation.landmarks?.outerLips
                         self.convertPointsForFace(outerLips, faceBoundingBox)
                         
-                        self.placeLabel(noseCrest, faceBoundingBox);
+                        DispatchQueue.main.async {
+                            self.drawLabel();
+                        }
                     }
                 }
             }
         }
     }
     
-    func placeLabel(_ landmark:VNFaceLandmarkRegion2D?, _ boundingBox: CGRect) {
-        if let convertedPoints = landmark?.normalizedPoints, let _ = landmark?.pointCount {
-            let faceLandmarkPoints = convertedPoints.map { (point: CGPoint) -> (x: CGFloat, y: CGFloat) in
-                let pointX = point.x * boundingBox.width + boundingBox.origin.x
-                let pointY = point.y * boundingBox.height + boundingBox.origin.y
-                
-                return (x: pointX, y: pointY)
-            }
-            DispatchQueue.main.async {
-                self.drawLabel(points: faceLandmarkPoints, boundingBox)
-            }
-        }
-    }
-    
-    func drawLabel(points: [(x: CGFloat, y:CGFloat)], _ boundingBox: CGRect) {
-        let label = UILabel(frame: CGRect(x:boundingBox.origin.x, y:boundingBox.origin.y, width:boundingBox.width, height:boundingBox.height))
+    func drawLabel() {
+        let screenSize = UIScreen.main.bounds
+        let label = UILabel(frame: CGRect(x: 0, y: 0, width: screenSize.size.width, height: screenSize.size.height))
         label.font = UIFont.preferredFont(forTextStyle: .headline)
         label.textColor = .white
         label.numberOfLines = 0
         label.adjustsFontSizeToFitWidth = true
-        label.center = CGPoint(x: points[0].x, y: points[0].y - 200)
+        label.center = CGPoint(x: screenSize.size.width/2, y:screenSize.size.height/10)
         label.textAlignment = .center
         label.text = "I am a test label"
         self.view.addSubview(label)
