@@ -9,6 +9,8 @@
 import UIKit
 import AVFoundation
 import Vision
+import FacebookCore
+import FacebookLogin
 
 final class ViewController: UIViewController {
     var session: AVCaptureSession?
@@ -42,6 +44,7 @@ final class ViewController: UIViewController {
     // This method executes as soon as the app is done loading assets and src
     override func viewDidLoad() {
         
+        
         // super
         super.viewDidLoad()
         
@@ -50,11 +53,22 @@ final class ViewController: UIViewController {
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
         self.view.addGestureRecognizer(swipeDown)
         
-        // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
-        sessionPrepare()
         
-        // start the the feed
-        session?.startRunning()
+        
+        // facebook account login
+        let loginButton = LoginButton(readPermissions: [ .publicProfile ])
+        loginButton.center = view.center
+        
+        view.addSubview(loginButton)
+
+        if let accessToken = AccessToken.current  {
+            print("logged in!")
+            // start the the feed
+            session?.startRunning()
+            
+            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
+            sessionPrepare()
+        }
         
     }
     
