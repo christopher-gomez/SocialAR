@@ -1,0 +1,11 @@
+platform :ios, '10.0'
+
+target 'Vision Face Detection' do
+
+    use_frameworks!
+    
+    pod 'FacebookCore'
+    pod 'FacebookLogin'
+    pod 'SwiftSocket'
+
+end
