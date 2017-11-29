@@ -6,6 +6,7 @@ target 'Vision Face Detection' do
     
     pod 'FacebookCore'
     pod 'FacebookLogin'
+    pod 'FacebookShare'
     pod 'SwiftSocket'
 
 end

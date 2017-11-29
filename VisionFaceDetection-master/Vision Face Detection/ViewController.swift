@@ -8,11 +8,10 @@
 
 import UIKit
 import AVFoundation
-import Vision
-import FBSDKCoreKit
-import FBSDKLoginKit
 import FacebookCore
 import FacebookLogin
+import Vision
+import FBSDKLoginKit
 
 final class ViewController: UIViewController {
     var session: AVCaptureSession?
@@ -96,6 +95,7 @@ final class ViewController: UIViewController {
     func loginButtonDidLogOut(loginButton:LoginButton) {
         print("logged out")
     }
+    
     /*
     //when login button clicked
     @objc func loginButtonClicked() {
