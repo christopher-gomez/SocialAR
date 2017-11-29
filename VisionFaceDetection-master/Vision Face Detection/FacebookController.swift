@@ -16,6 +16,10 @@ class FacebookController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
+        swipeDown.direction = UISwipeGestureRecognizerDirection.down
+        self.view.addGestureRecognizer(swipeDown)
+        
         self.view.backgroundColor = UIColor.white
         
         // facebook account login
@@ -91,5 +95,22 @@ class FacebookController: UIViewController {
     
     @objc func done(){
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
+        
+        // if the user swipes in any direction
+        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
+            
+            // which direction
+            switch swipeGesture.direction {
+                
+            case UISwipeGestureRecognizerDirection.down:
+                self.dismiss(animated: true, completion: nil)
+                break
+            default:
+                break
+            }
+        }
     }
 }
