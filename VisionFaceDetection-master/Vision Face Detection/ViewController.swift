@@ -25,9 +25,6 @@ final class ViewController: UIViewController {
     // Label UI Layer
     let labelLayer = UIView()
     
-    // Facebook Button Layer
-    let fbButton = UIView()
-    
     // Button UI Layer
     let btnLayer = UIView()
     
@@ -91,7 +88,6 @@ final class ViewController: UIViewController {
         previewLayer?.frame = view.frame
         labelLayer.frame = view.frame
         btnLayer.frame = view.frame
-        fbButton.frame = view.frame
         shapeLayer.frame = view.frame
     }
     
