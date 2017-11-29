@@ -13,6 +13,7 @@ import FacebookLogin
 import Vision
 import FBSDKLoginKit
 
+
 final class ViewController: UIViewController {
     
     // Camera capture object
@@ -26,6 +27,9 @@ final class ViewController: UIViewController {
     
     // Label UI Layer
     let labelLayer = UIView()
+    
+    // Facebook Button Layer
+    let fbButton = UIView()
     
     // Button UI Layer
     let btnLayer = UIView()
@@ -61,39 +65,23 @@ final class ViewController: UIViewController {
     // This method executes as soon as the app is done loading assets and src
     override func viewDidLoad() {
         
-        
         // super
         super.viewDidLoad()
         
         // set up gesture support
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
+        let swipeUp = UISwipeGestureRecognizer(target:self, action: #selector(self.respondToSwipeGesture))
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
+        swipeUp.direction = UISwipeGestureRecognizerDirection.up
         self.view.addGestureRecognizer(swipeDown)
+        self.view.addGestureRecognizer(swipeUp)
         
-        // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
-        sessionPrepare()
-        
-        // start the the feed
-        session?.startRunning()
-        
-        // facebook account login
-        /*let loginButton = LoginButton(readPermissions: [ .publicProfile ])
-        loginButton.center = view.center
-        
-        view.addSubview(loginButton)
-        
-        loginButton.delegate = self as? LoginButtonDelegate
-
-        if let accessToken = AccessToken.current  {
-            print("logged in!")
-            view.removeFromSuperview()
-         
-            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
-            sessionPrepare()
-            
-            // start the the feed
-            session?.startRunning()
-        }*/
+        self.sessionPrepare()
+        self.session?.startRunning()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
     }
     
     // This method lets the app know what our layer bounds are
@@ -106,6 +94,7 @@ final class ViewController: UIViewController {
         previewLayer?.frame = view.frame
         labelLayer.frame = view.frame
         btnLayer.frame = view.frame
+        fbButton.frame = view.frame
         shapeLayer.frame = view.frame
     }
     
@@ -177,7 +166,10 @@ final class ViewController: UIViewController {
         switch result {
         case .success:
             print("Gage is a bitch")
-            view.removeFromSuperview()
+            
+            for view in self.fbButton.subviews {
+                view.removeFromSuperview()
+            }
             
             // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
             sessionPrepare()
@@ -306,6 +298,9 @@ final class ViewController: UIViewController {
                         view.removeFromSuperview()
                     }
                 }
+                break
+            case UISwipeGestureRecognizerDirection.up:
+                self.present(facebookController(), animated: true, completion: nil)
                 break
             default:
                 break
@@ -479,4 +474,40 @@ extension ViewController {
         
         return convertedPoints
     }*/
+}
+
+class facebookController: UIViewController {
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        self.view.backgroundColor = UIColor.white
+        
+        // facebook account login
+        let loginButton = LoginButton(readPermissions: [ .publicProfile ])
+        loginButton.center = view.center
+        
+        let screenSize = UIScreen.main.bounds
+        let navBar: UINavigationBar = UINavigationBar()
+        navBar.frame = CGRect(x: 0, y: 20, width: self.view.frame.size.width, height: 400)
+        navBar.backgroundColor = UIColor.white;
+        let navTitle = UINavigationItem(title: "Facebook Login Page")
+        navTitle.rightBarButtonItem = UIBarButtonItem(title: "Done",
+                                                      style:.plain,
+                                                      target:self,
+                                                      action:#selector(done))
+        navBar.setItems([navTitle], animated: true)
+        self.view.addSubview(navBar)
+        self.view.addSubview(loginButton)
+        
+        loginButton.delegate = self as? LoginButtonDelegate
+        
+        if AccessToken.current != nil  {
+            print("logged in!")
+        }
+    }
+    
+    @objc func done(){
+        self.dismiss(animated: true, completion: nil)
+    }
 }
