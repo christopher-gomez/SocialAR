@@ -113,7 +113,7 @@ final class ViewController: UIViewController {
         // Set up the button / button layer
         let btnCapture = UIButton(type: .custom)
         let screenSize: CGPoint = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90)
-        btnCapture.frame = CGRect(x: screenSize.x, y:screenSize.y, width: 100, height: 100)
+        btnCapture.frame = CGRect(x: screenSize.x, y:screenSize.y, width: 70, height: 70)
         btnCapture.layer.cornerRadius = 0.5*btnCapture.bounds.size.width
         btnCapture.center = screenSize
         btnCapture.backgroundColor = UIColor.clear
@@ -121,12 +121,12 @@ final class ViewController: UIViewController {
         btnCapture.tag = 1
         btnCapture.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
         
-        // This circle path doesnt do anything yet, I eventually want to make a circle with a hole in it like snapchat, turn the circle rim blue when recognition is happening
-        let circlePath = UIBezierPath(arcCenter: screenSize, radius: CGFloat(20), startAngle: CGFloat(0), endAngle:CGFloat(Double.pi * 2), clockwise: true)
+        // Ring around button
+        let circlePath = UIBezierPath(arcCenter: screenSize, radius: CGFloat(0.5*btnCapture.bounds.size.width), startAngle: CGFloat(-rad(value: 90.0)), endAngle: CGFloat(rad(value: 360.0-90.0)), clockwise: true)
         
         circularOutline.path = circlePath.cgPath
         setOutlineColor(recognition: self.recognize)
-        circularOutline.lineWidth = 2.5
+        circularOutline.lineWidth = 10
         
         self.btnLayer.layer.addSublayer(circularOutline)
         
@@ -134,7 +134,7 @@ final class ViewController: UIViewController {
         let blur = UIBlurEffect(style: UIBlurEffectStyle.regular)
         let blurView = UIVisualEffectView(effect: blur)
         
-        blurView.frame = CGRect(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90, width: 100, height: 100)
+        blurView.frame = CGRect(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90, width: 70, height: 70)
         blurView.center = screenSize
         blurView.clipsToBounds = true
         blurView.layer.cornerRadius = 0.5*btnCapture.bounds.size.width
@@ -196,10 +196,11 @@ final class ViewController: UIViewController {
         case true:
             
             // change the fill color
-            circularOutline.fillColor = UIColor.blue.cgColor
+            circularOutline.fillColor = UIColor.clear.cgColor
             
             // you can change the stroke color
             circularOutline.strokeColor = UIColor.blue.cgColor
+            
             break
         case false:
             
@@ -207,7 +208,7 @@ final class ViewController: UIViewController {
             circularOutline.fillColor = UIColor.clear.cgColor
             
             // you can change the stroke color
-            circularOutline.strokeColor = UIColor.clear.cgColor
+            circularOutline.strokeColor = UIColor.white.cgColor
             break
         }
     }
@@ -315,6 +316,10 @@ final class ViewController: UIViewController {
         path.addLine(to: CGPoint(x: points[0].x, y: points[0].y))
         newLayer.path = path.cgPath
         shapeLayer.addSublayer(newLayer)
+    }
+    
+    func rad(value: Double) -> Double {
+        return (value * Double.pi) / 180
     }
     
     /******************************* END MISC METHODS ***********************************/
