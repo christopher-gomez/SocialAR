@@ -14,21 +14,34 @@ import Vision
 import FBSDKLoginKit
 
 final class ViewController: UIViewController {
+    
+    // Camera capture object
     var session: AVCaptureSession?
+    
+    // Vision Detection UI Layer
     let shapeLayer = CAShapeLayer()
     
+    // Button Outline
     var circularOutline = CAShapeLayer()
     
+    // Label UI Layer
     let labelLayer = UIView()
+    
+    // Button UI Layer
     let btnLayer = UIView()
     
+    // To turn recognition off/on
     var recognize = false
 
+    // Facial Detection object
     let faceDetection = VNDetectFaceRectanglesRequest()
+    let faceDetectionRequest = VNSequenceRequestHandler()
+
+    // Facial Features object
     let faceLandmarks = VNDetectFaceLandmarksRequest()
     let faceLandmarksDetectionRequest = VNSequenceRequestHandler()
-    let faceDetectionRequest = VNSequenceRequestHandler()
     
+    // Actual Video displayed on screen saved into a var
     lazy var previewLayer: AVCaptureVideoPreviewLayer? = {
         guard let session = self.session else { return nil }
         
@@ -38,9 +51,12 @@ final class ViewController: UIViewController {
         return previewLayer
     }()
     
+    // Back Camera object
     var backCamera: AVCaptureDevice? = {
         return AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back)
     }()
+    
+/***************************** LIFECYCLE HOOKS **********************************/
     
     // This method executes as soon as the app is done loading assets and src
     override func viewDidLoad() {
@@ -54,10 +70,14 @@ final class ViewController: UIViewController {
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
         self.view.addGestureRecognizer(swipeDown)
         
+        // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
+        sessionPrepare()
         
+        // start the the feed
+        session?.startRunning()
         
         // facebook account login
-        let loginButton = LoginButton(readPermissions: [ .publicProfile ])
+        /*let loginButton = LoginButton(readPermissions: [ .publicProfile ])
         loginButton.center = view.center
         
         view.addSubview(loginButton)
@@ -67,64 +87,14 @@ final class ViewController: UIViewController {
         if let accessToken = AccessToken.current  {
             print("logged in!")
             view.removeFromSuperview()
+         
+            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
+            sessionPrepare()
             
             // start the the feed
             session?.startRunning()
-            
-            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
-            sessionPrepare()
-        }
+        }*/
     }
-    
-    func loginButtonDidCompleteLogin(_ loginButton:LoginButton,result:LoginResult) {
-        switch result {
-        case .success:
-            print("Gage is a bitch")
-            view.removeFromSuperview()
-            
-            // start the the feed
-            session?.startRunning()
-            
-            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
-            sessionPrepare()
-        default:
-            break;
-        }
-    }
-    
-    func loginButtonDidLogOut(loginButton:LoginButton) {
-        print("logged out")
-    }
-    
-    /*
-    //when login button clicked
-    @objc func loginButtonClicked() {
-        let loginManager = LoginManager()
-        loginManager.logIn([.publicProfile], viewController: self) { loginResult in
-            switch loginResult {
-            case .failed(let error):
-                print(error)
-            case .cancelled:
-                print("User cancelled login.")
-            case .success(let grantedPermissions, let declinedPermissions, let accessToken):
-                self.getFBUserData()
-            }
-        }
-    }
-    
-    //function is fetching the user data
-    func getFBUserData(){
-        if((FBSDKAccessToken.current()) != nil){
-            FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
-                if (error == nil){
-                    self.dict = result as! [String : AnyObject]
-                    print(result!)
-                    print(self.dict)
-                }
-            })
-        }
-    }
-    */
     
     // This method lets the app know what our layer bounds are
     override func viewDidLayoutSubviews() {
@@ -154,7 +124,7 @@ final class ViewController: UIViewController {
         shapeLayer.lineWidth = 2.0
         shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
         view.layer.addSublayer(shapeLayer)
-
+        
         // Add the label layer
         self.view.addSubview(labelLayer)
         
@@ -198,6 +168,65 @@ final class ViewController: UIViewController {
         self.view.addSubview(btnLayer)
     }
     
+/*********************** END LIFECYCLE HOOKS **********************************/
+    
+
+/*********************** FACEBOOK/SERVER METHODS ********************************/
+    
+    func loginButtonDidCompleteLogin(_ loginButton:LoginButton,result:LoginResult) {
+        switch result {
+        case .success:
+            print("Gage is a bitch")
+            view.removeFromSuperview()
+            
+            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
+            sessionPrepare()
+            
+            // start the the feed
+            session?.startRunning()
+        default:
+            break;
+        }
+    }
+    
+    func loginButtonDidLogOut(loginButton:LoginButton) {
+        print("logged out")
+    }
+    
+    /*
+    //when login button clicked
+    @objc func loginButtonClicked() {
+        let loginManager = LoginManager()
+        loginManager.logIn([.publicProfile], viewController: self) { loginResult in
+            switch loginResult {
+            case .failed(let error):
+                print(error)
+            case .cancelled:
+                print("User cancelled login.")
+            case .success(let grantedPermissions, let declinedPermissions, let accessToken):
+                self.getFBUserData()
+            }
+        }
+    }
+    
+    //function is fetching the user data
+    func getFBUserData(){
+        if((FBSDKAccessToken.current()) != nil){
+            FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
+                if (error == nil){
+                    self.dict = result as! [String : AnyObject]
+                    print(result!)
+                    print(self.dict)
+                }
+            })
+        }
+    }
+    */
+    
+/*********************** END FACEBOOK/SERVER METHODS ********************************/
+    
+/******************************* MISC METHODS ***********************************/
+    
     // Gets and sets up the camera and feed
     func sessionPrepare() {
         session = AVCaptureSession()
@@ -232,6 +261,34 @@ final class ViewController: UIViewController {
         }
     }
     
+    // Button color changes depending on current status of recognition
+    func setOutlineColor(recognition: Bool) {
+        
+        switch recognition {
+        case true:
+            
+            // change the fill color
+            circularOutline.fillColor = UIColor.blue.cgColor
+            
+            // you can change the stroke color
+            circularOutline.strokeColor = UIColor.blue.cgColor
+            break
+        case false:
+            
+            // change the fill color
+            circularOutline.fillColor = UIColor.clear.cgColor
+            
+            // you can change the stroke color
+            circularOutline.strokeColor = UIColor.clear.cgColor
+            break
+        }
+    }
+    
+/******************************* END MISC METHODS ***********************************/
+
+    
+/************************ USER RESPONSE METHODS ***************************/
+    
     // This method defines gesture support actions
     @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
         
@@ -254,30 +311,6 @@ final class ViewController: UIViewController {
                 break
             }
         }
-    }
-    
-    // Button color changes depending on current status of recognition
-    func setOutlineColor(recognition: Bool) {
-        
-        switch recognition {
-            case true:
-                
-                // change the fill color
-                circularOutline.fillColor = UIColor.blue.cgColor
-                
-                // you can change the stroke color
-                circularOutline.strokeColor = UIColor.blue.cgColor
-                break
-            case false:
-                
-                // change the fill color
-                circularOutline.fillColor = UIColor.clear.cgColor
-                
-                // you can change the stroke color
-                circularOutline.strokeColor = UIColor.clear.cgColor
-                break
-        }
-        
     }
     
     // Set up UI button responses
@@ -307,7 +340,8 @@ final class ViewController: UIViewController {
             }
         }
     }
-    
+/************************ END USER RESPONSE METHODS ***************************/
+
 }
 
 extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
