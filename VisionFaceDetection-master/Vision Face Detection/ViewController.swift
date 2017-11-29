@@ -8,11 +8,8 @@
 
 import UIKit
 import AVFoundation
-import FacebookCore
-import FacebookLogin
-import Vision
-import FBSDKLoginKit
 
+import Vision
 
 final class ViewController: UIViewController {
     
@@ -60,7 +57,7 @@ final class ViewController: UIViewController {
         return AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back)
     }()
     
-/***************************** LIFECYCLE HOOKS **********************************/
+    /***************************** LIFECYCLE HOOKS **********************************/
     
     // This method executes as soon as the app is done loading assets and src
     override func viewDidLoad() {
@@ -157,67 +154,10 @@ final class ViewController: UIViewController {
         self.view.addSubview(btnLayer)
     }
     
-/*********************** END LIFECYCLE HOOKS **********************************/
+    /************************** END LIFECYCLE HOOKS **********************************/
     
 
-/*********************** FACEBOOK/SERVER METHODS ********************************/
-    
-    func loginButtonDidCompleteLogin(_ loginButton:LoginButton,result:LoginResult) {
-        switch result {
-        case .success:
-            print("Gage is a bitch")
-            
-            for view in self.fbButton.subviews {
-                view.removeFromSuperview()
-            }
-            
-            // prepare the camera feed (check if theres a valid camera, grabs the feed in a variable)
-            sessionPrepare()
-            
-            // start the the feed
-            session?.startRunning()
-        default:
-            break;
-        }
-    }
-    
-    func loginButtonDidLogOut(loginButton:LoginButton) {
-        print("logged out")
-    }
-    
-    /*
-    //when login button clicked
-    @objc func loginButtonClicked() {
-        let loginManager = LoginManager()
-        loginManager.logIn([.publicProfile], viewController: self) { loginResult in
-            switch loginResult {
-            case .failed(let error):
-                print(error)
-            case .cancelled:
-                print("User cancelled login.")
-            case .success(let grantedPermissions, let declinedPermissions, let accessToken):
-                self.getFBUserData()
-            }
-        }
-    }
-    
-    //function is fetching the user data
-    func getFBUserData(){
-        if((FBSDKAccessToken.current()) != nil){
-            FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
-                if (error == nil){
-                    self.dict = result as! [String : AnyObject]
-                    print(result!)
-                    print(self.dict)
-                }
-            })
-        }
-    }
-    */
-    
-/*********************** END FACEBOOK/SERVER METHODS ********************************/
-    
-/******************************* MISC METHODS ***********************************/
+    /******************************* MISC METHODS ***********************************/
     
     // Gets and sets up the camera and feed
     func sessionPrepare() {
@@ -275,90 +215,6 @@ final class ViewController: UIViewController {
             break
         }
     }
-    
-/******************************* END MISC METHODS ***********************************/
-
-    
-/************************ USER RESPONSE METHODS ***************************/
-    
-    // This method defines gesture support actions
-    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
-        
-        // if the user swipes in any direction
-        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
-            
-            // which direction
-            switch swipeGesture.direction {
-                
-            // if down, get rid of the recognition UI
-            case UISwipeGestureRecognizerDirection.down:
-                DispatchQueue.main.async {
-                    self.shapeLayer.sublayers?.removeAll()
-                    for view in self.labelLayer.subviews {
-                        view.removeFromSuperview()
-                    }
-                }
-                break
-            case UISwipeGestureRecognizerDirection.up:
-                self.present(facebookController(), animated: true, completion: nil)
-                break
-            default:
-                break
-            }
-        }
-    }
-    
-    // Set up UI button responses
-    @objc func buttonAction(sender: UIButton!) {
-        let btnsendtag: UIButton = sender
-        if btnsendtag.tag == 1 {
-            switch recognize {
-                
-                // Sometimes this case needs to run twice to execute the dispatchqueue for some reason, can't figure out why but the swipe down method works for getting rid of recognition UI no matter what
-                case true:
-                    recognize = false
-                    setOutlineColor(recognition: recognize)
-                    do {
-                        DispatchQueue.main.async {
-                            self.shapeLayer.sublayers?.removeAll()
-                            for view in self.labelLayer.subviews {
-                                view.removeFromSuperview()
-                            }
-                        }
-                    }
-                    break
-                case false:
-                    recognize = true
-                    setOutlineColor(recognition: recognize)
-                    break
-                
-            }
-        }
-    }
-/************************ END USER RESPONSE METHODS ***************************/
-
-}
-
-extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
-        
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        
-        let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
-        
-        let attachments = CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate)
-        let ciImage = CIImage(cvImageBuffer: pixelBuffer!, options: attachments as! [String : Any]?)
-        
-        //leftMirrored for front camera
-        let ciImageWithOrientation = ciImage.oriented(forExifOrientation: Int32(UIImageOrientation.leftMirrored.rawValue))
-        
-        if recognize {
-            detectFace(on: ciImageWithOrientation)
-        }
-    }
-        
-}
-
-extension ViewController {
     
     func detectFace(on image: CIImage) {
         try? faceDetectionRequest.perform([faceDetection], on: image)
@@ -465,49 +321,84 @@ extension ViewController {
         shapeLayer.addSublayer(newLayer)
     }
     
+    /******************************* END MISC METHODS ***********************************/
+
     
-   /* func convert(_ points: UnsafePointer<vector_float2>, with count: Int) -> [(x: CGFloat, y: CGFloat)] {
-        var convertedPoints = [(x: CGFloat, y: CGFloat)]()
-        for i in 0...count {
-            convertedPoints.append((CGFloat(points[i].x), CGFloat(points[i].y)))
-        }
+    /*************************** USER RESPONSE METHODS **********************************/
+    
+    // This method defines gesture support actions
+    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
         
-        return convertedPoints
-    }*/
+        // if the user swipes in any direction
+        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
+            
+            // which direction
+            switch swipeGesture.direction {
+                
+            // if down, get rid of the recognition UI
+            case UISwipeGestureRecognizerDirection.down:
+                DispatchQueue.main.async {
+                    self.shapeLayer.sublayers?.removeAll()
+                    for view in self.labelLayer.subviews {
+                        view.removeFromSuperview()
+                    }
+                }
+                break
+            case UISwipeGestureRecognizerDirection.up:
+                self.present(FacebookController(), animated: true, completion: nil)
+                break
+            default:
+                break
+            }
+        }
+    }
+    
+    // Set up UI button responses
+    @objc func buttonAction(sender: UIButton!) {
+        let btnsendtag: UIButton = sender
+        if btnsendtag.tag == 1 {
+            switch recognize {
+                
+                // Sometimes this case needs to run twice to execute the dispatchqueue for some reason, can't figure out why but the swipe down method works for getting rid of recognition UI no matter what
+                case true:
+                    recognize = false
+                    setOutlineColor(recognition: recognize)
+                    do {
+                        DispatchQueue.main.async {
+                            self.shapeLayer.sublayers?.removeAll()
+                            for view in self.labelLayer.subviews {
+                                view.removeFromSuperview()
+                            }
+                        }
+                    }
+                    break
+                case false:
+                    recognize = true
+                    setOutlineColor(recognition: recognize)
+                    break
+                
+            }
+        }
+    }
+    /**************************** END USER RESPONSE METHODS *******************************/
+
 }
 
-class facebookController: UIViewController {
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
+extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         
-        self.view.backgroundColor = UIColor.white
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         
-        // facebook account login
-        let loginButton = LoginButton(readPermissions: [ .publicProfile ])
-        loginButton.center = view.center
+        let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
         
-        let screenSize = UIScreen.main.bounds
-        let navBar: UINavigationBar = UINavigationBar()
-        navBar.frame = CGRect(x: 0, y: 20, width: self.view.frame.size.width, height: 400)
-        navBar.backgroundColor = UIColor.white;
-        let navTitle = UINavigationItem(title: "Facebook Login Page")
-        navTitle.rightBarButtonItem = UIBarButtonItem(title: "Done",
-                                                      style:.plain,
-                                                      target:self,
-                                                      action:#selector(done))
-        navBar.setItems([navTitle], animated: true)
-        self.view.addSubview(navBar)
-        self.view.addSubview(loginButton)
+        let attachments = CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate)
+        let ciImage = CIImage(cvImageBuffer: pixelBuffer!, options: attachments as! [String : Any]?)
         
-        loginButton.delegate = self as? LoginButtonDelegate
+        //leftMirrored for front camera
+        let ciImageWithOrientation = ciImage.oriented(forExifOrientation: Int32(UIImageOrientation.leftMirrored.rawValue))
         
-        if AccessToken.current != nil  {
-            print("logged in!")
+        if recognize {
+            detectFace(on: ciImageWithOrientation)
         }
     }
     
-    @objc func done(){
-        self.dismiss(animated: true, completion: nil)
-    }
 }
