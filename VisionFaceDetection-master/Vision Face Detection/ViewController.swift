@@ -13,15 +13,23 @@ import Vision
 
 final class ViewController: UIViewController {
     
+    var photoCount = 0
+    
     // Camera capture object
     var session: AVCaptureSession?
+    
+    // Photo from a video
+    let photoOutput = AVCapturePhotoOutput()
     
     // Vision Detection UI Layer
     let shapeLayer = CAShapeLayer()
     
-    // Button Outline
+    // Capture Button Outline
     var circularOutline = CAShapeLayer()
     
+    // flash button layer
+    let imageView = UIImageView()
+
     // Label UI Layer
     let labelLayer = UIView()
     
@@ -51,8 +59,29 @@ final class ViewController: UIViewController {
     
     // Back Camera object
     var backCamera: AVCaptureDevice? = {
-        return AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back)
+        var defaultVideoDevice: AVCaptureDevice?
+        
+        // Choose the back dual camera if available, otherwise default to a wide angle camera.
+        if let dualCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInDualCamera, for: AVMediaType.video, position: .back) {
+            defaultVideoDevice = dualCameraDevice
+        } else if let backCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .back) {
+            // If the back dual camera is not available, default to the back wide angle camera.
+            defaultVideoDevice = backCameraDevice
+        } else if let frontCameraDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: .front) {
+            /*
+             In some cases where users break their phones, the back wide angle camera is not available.
+             In this case, we should default to the front wide angle camera.
+             */
+            defaultVideoDevice = frontCameraDevice
+        }
+        return defaultVideoDevice
     }()
+    
+    // stream of media from device to session
+    var videoDeviceInput: AVCaptureDeviceInput!
+    
+    // Photo
+    var capturedImage = UIImageView()
     
     /***************************** LIFECYCLE HOOKS **********************************/
     
@@ -97,6 +126,8 @@ final class ViewController: UIViewController {
         // super
         super.viewDidAppear(animated)
         
+        let screenSize: CGPoint = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90)
+        
         // Set up the camera feed layer
         guard let previewLayer = previewLayer else { return }
         view.layer.addSublayer(previewLayer)
@@ -110,9 +141,21 @@ final class ViewController: UIViewController {
         // Add the label layer
         self.view.addSubview(labelLayer)
         
-        // Set up the button / button layer
+        // set up the flash button
+        let flashBtn = UIButton(type: .custom)
+        flashBtn.frame = CGRect(x: self.view.frame.maxX-50, y: 20, width: 50, height: 50)
+        flashBtn.layer.cornerRadius = 0.5*flashBtn.bounds.size.width
+        let image = UIImage(named: "lightning")
+        let templateImage = image?.withRenderingMode(.alwaysTemplate)
+        self.imageView.image = templateImage?.imageWithColor(UIColor.white)
+        flashBtn.setImage(imageView.image, for: .normal)
+        flashBtn.clipsToBounds = true
+        flashBtn.tag = 2
+        flashBtn.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
+        self.btnLayer.addSubview(flashBtn)
+        
+        // Set up the capture button / buttons layer
         let btnCapture = UIButton(type: .custom)
-        let screenSize: CGPoint = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90)
         btnCapture.frame = CGRect(x: screenSize.x, y:screenSize.y, width: 70, height: 70)
         btnCapture.layer.cornerRadius = 0.5*btnCapture.bounds.size.width
         btnCapture.center = screenSize
@@ -121,29 +164,27 @@ final class ViewController: UIViewController {
         btnCapture.tag = 1
         btnCapture.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
         
-        // Ring around button
+        // Ring shape around button
         let circlePath = UIBezierPath(arcCenter: screenSize, radius: CGFloat(0.5*btnCapture.bounds.size.width), startAngle: CGFloat(-rad(value: 90.0)), endAngle: CGFloat(rad(value: 360.0-90.0)), clockwise: true)
-        
         circularOutline.path = circlePath.cgPath
         setOutlineColor(recognition: self.recognize)
         circularOutline.lineWidth = 10
         
+        // adding a circular outline to a shape layer in the button layer
         self.btnLayer.layer.addSublayer(circularOutline)
         
         // Set up a blur effect on the button
         let blur = UIBlurEffect(style: UIBlurEffectStyle.regular)
         let blurView = UIVisualEffectView(effect: blur)
-        
         blurView.frame = CGRect(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90, width: 70, height: 70)
         blurView.center = screenSize
         blurView.clipsToBounds = true
         blurView.layer.cornerRadius = 0.5*btnCapture.bounds.size.width
-        blurView.tag = 2
         
         // Add the blur to the button layer
         self.btnLayer.addSubview(blurView)
         
-        // Add the button to the button layer
+        // Add the capture button to the button layer
         self.btnLayer.addSubview(btnCapture)
         
         // add the button layer to the main view
@@ -162,11 +203,12 @@ final class ViewController: UIViewController {
         guard let session = session, let captureDevice = backCamera else { return }
         
         do {
-            let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
+            let videoDeviceInput = try AVCaptureDeviceInput(device: captureDevice)
             session.beginConfiguration()
             
-            if session.canAddInput(deviceInput) {
-                session.addInput(deviceInput)
+            if session.canAddInput(videoDeviceInput) {
+                session.addInput(videoDeviceInput)
+                self.videoDeviceInput = videoDeviceInput
             }
             
             let output = AVCaptureVideoDataOutput()
@@ -178,6 +220,9 @@ final class ViewController: UIViewController {
             
             if session.canAddOutput(output) {
                 session.addOutput(output)
+                session.addOutput(photoOutput)
+                
+                photoOutput.isHighResolutionCaptureEnabled = true
             }
             
             session.commitConfiguration()
@@ -213,6 +258,145 @@ final class ViewController: UIViewController {
         }
     }
     
+    func rad(value: Double) -> Double {
+        return (value * Double.pi) / 180
+    }
+    
+    /******************************* END MISC METHODS ***********************************/
+
+    
+    /*************************** USER RESPONSE METHODS **********************************/
+    
+    // This method defines gesture support actions
+    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
+        
+        // if the user swipes in any direction
+        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
+            
+            // which direction
+            switch swipeGesture.direction {
+                
+            // if down, get rid of the recognition UI
+            case UISwipeGestureRecognizerDirection.down:
+                DispatchQueue.main.async {
+                    self.shapeLayer.sublayers?.removeAll()
+                    for view in self.labelLayer.subviews {
+                        view.removeFromSuperview()
+                    }
+                }
+                break
+            case UISwipeGestureRecognizerDirection.up:
+                self.present(FacebookController(), animated: true, completion: nil)
+                break
+            default:
+                break
+            }
+        }
+    }
+    
+    // Set up UI button responses
+    @objc func buttonAction(sender: UIButton!) {
+        let btnsendtag: UIButton = sender
+        switch btnsendtag.tag {
+            case 1:
+                switch recognize {
+                
+                    // Sometimes this case needs to run twice to execute the dispatchqueue for some reason, can't figure out why but the swipe down method works for getting rid of recognition UI no matter what
+                    case true:
+                        recognize = false
+                        setOutlineColor(recognition: recognize)
+                        do {
+                            DispatchQueue.main.async {
+                                self.shapeLayer.sublayers?.removeAll()
+                                for view in self.labelLayer.subviews {
+                                    view.removeFromSuperview()
+                                }
+                            }
+                        }
+                        break
+                    case false:
+                        recognize = true
+                        setOutlineColor(recognition: recognize)
+                        break
+                }
+                break
+            case 2:
+                if (backCamera?.hasTorch)! {
+                    do {
+                        try backCamera?.lockForConfiguration()
+                        
+                        if (backCamera?.isTorchActive)! == true {
+                            backCamera?.torchMode = .off
+                        } else {
+                            backCamera?.torchMode = .on
+                        }
+                        
+                        backCamera?.unlockForConfiguration()
+                    }
+                    
+                    catch {
+                        print("Torch failed")
+                    }
+                } else {
+                    print("Torch unavailable")
+                }
+                break
+            default:
+                break
+        }
+    }
+    
+    /**************************** END USER RESPONSE METHODS *******************************/
+    
+}
+
+extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate {
+        
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        
+        let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+        
+        let attachments = CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate)
+        let ciImage = CIImage(cvImageBuffer: pixelBuffer!, options: attachments as! [String : Any]?)
+        
+        //leftMirrored for front camera
+        let ciImageWithOrientation = ciImage.oriented(forExifOrientation: Int32(UIImageOrientation.leftMirrored.rawValue))
+        
+        if recognize {
+            detectFace(on: ciImageWithOrientation)
+        }
+    }
+    
+    func capturePhoto() {
+        let photoSettings = AVCapturePhotoSettings()
+        
+        photoSettings.isHighResolutionPhotoEnabled = true
+        
+        if !photoSettings.availablePreviewPhotoPixelFormatTypes.isEmpty {
+            photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String: photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
+        }
+        photoOutput.capturePhoto(with: photoSettings, delegate: self)
+        self.photoCount = self.photoCount + 1
+        print("Photo ", self.photoCount, " captured")
+    }
+    
+    func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?, previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Error?) {
+        
+        if let error = error {
+            print("Error capturing photo: \(error)")
+        } else {
+            if let sampleBuffer = photoSampleBuffer, let previewBuffer = previewPhotoSampleBuffer, let dataImage = AVCapturePhotoOutput.jpegPhotoDataRepresentation(forJPEGSampleBuffer: sampleBuffer, previewPhotoSampleBuffer: previewBuffer) {
+                
+                if let image = UIImage(data: dataImage) {
+                    self.capturedImage.image = image
+                }
+            }
+        }
+    }
+}
+
+// All facial detection methods in this extension to keep it cleaner
+extension ViewController {
     func detectFace(on image: CIImage) {
         try? faceDetectionRequest.perform([faceDetection], on: image)
         if let results = faceDetection.results as? [VNFaceObservation] {
@@ -222,55 +406,75 @@ final class ViewController: UIViewController {
                 
                 DispatchQueue.main.async {
                     self.shapeLayer.sublayers?.removeAll()
-                    for view in self.labelLayer.subviews {
-                        view.removeFromSuperview()
-                    }
+                    /*for view in self.labelLayer.subviews {
+                     view.removeFromSuperview()
+                     }*/
                 }
             }
         }
+        return
     }
     
     func detectLandmarks(on image: CIImage) {
         try? faceLandmarksDetectionRequest.perform([faceLandmarks], on: image)
         if let landmarksResults = faceLandmarks.results as? [VNFaceObservation] {
             for observation in landmarksResults {
-                DispatchQueue.main.async {
-                    if let boundingBox = self.faceLandmarks.inputFaceObservations?.first?.boundingBox {
-                        let faceBoundingBox = boundingBox.scaled(to: self.view.bounds.size)
+                var work: DispatchWorkItem!
+                work = DispatchWorkItem { [weak self] in
+                    if let boundingBox = self?.faceLandmarks.inputFaceObservations?.first?.boundingBox {
+                        let faceBoundingBox = boundingBox.scaled(to: (self?.view.bounds.size)!)
                         
                         //different types of landmarks
                         let faceContour = observation.landmarks?.faceContour
-                        self.convertPointsForFace(faceContour, faceBoundingBox)
+                        self?.convertPointsForFace(faceContour, faceBoundingBox)
                         
                         let leftEye = observation.landmarks?.leftEye
-                        self.convertPointsForFace(leftEye, faceBoundingBox)
+                        self?.convertPointsForFace(leftEye, faceBoundingBox)
                         
                         let rightEye = observation.landmarks?.rightEye
-                        self.convertPointsForFace(rightEye, faceBoundingBox)
+                        self?.convertPointsForFace(rightEye, faceBoundingBox)
                         
                         let nose = observation.landmarks?.nose
-                        self.convertPointsForFace(nose, faceBoundingBox)
+                        self?.convertPointsForFace(nose, faceBoundingBox)
                         
                         let lips = observation.landmarks?.innerLips
-                        self.convertPointsForFace(lips, faceBoundingBox)
+                        self?.convertPointsForFace(lips, faceBoundingBox)
                         
                         let leftEyebrow = observation.landmarks?.leftEyebrow
-                        self.convertPointsForFace(leftEyebrow, faceBoundingBox)
+                        self?.convertPointsForFace(leftEyebrow, faceBoundingBox)
                         
                         let rightEyebrow = observation.landmarks?.rightEyebrow
-                        self.convertPointsForFace(rightEyebrow, faceBoundingBox)
+                        self?.convertPointsForFace(rightEyebrow, faceBoundingBox)
                         
                         let noseCrest = observation.landmarks?.noseCrest
-                        self.convertPointsForFace(noseCrest, faceBoundingBox)
+                        self?.convertPointsForFace(noseCrest, faceBoundingBox)
                         
                         let outerLips = observation.landmarks?.outerLips
-                        self.convertPointsForFace(outerLips, faceBoundingBox)
+                        self?.convertPointsForFace(outerLips, faceBoundingBox)
                         
+                        // Capture a photo after a face has been detected for 3 seconds
+                        let when = DispatchTime.now() + 3
+                        var work: DispatchWorkItem!
+                        work = DispatchWorkItem { [weak self] in
+                            for i in 1...1 {
+                                self?.capturePhoto()
+                                break
+                            }
+                            return
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: when, execute: work)
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        self?.recognize = false
+                        self?.setOutlineColor(recognition: (self?.recognize)!)
                         DispatchQueue.main.async {
-                            self.drawLabel();
+                            self?.shapeLayer.sublayers?.removeAll()
                         }
                     }
                 }
+                DispatchQueue.main.async(execute: work)
+                //print("recognition over")
             }
         }
     }
@@ -317,89 +521,26 @@ final class ViewController: UIViewController {
         newLayer.path = path.cgPath
         shapeLayer.addSublayer(newLayer)
     }
-    
-    func rad(value: Double) -> Double {
-        return (value * Double.pi) / 180
-    }
-    
-    /******************************* END MISC METHODS ***********************************/
-
-    
-    /*************************** USER RESPONSE METHODS **********************************/
-    
-    // This method defines gesture support actions
-    @objc func respondToSwipeGesture(gesture: UIGestureRecognizer) {
-        
-        // if the user swipes in any direction
-        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
-            
-            // which direction
-            switch swipeGesture.direction {
-                
-            // if down, get rid of the recognition UI
-            case UISwipeGestureRecognizerDirection.down:
-                DispatchQueue.main.async {
-                    self.shapeLayer.sublayers?.removeAll()
-                    for view in self.labelLayer.subviews {
-                        view.removeFromSuperview()
-                    }
-                }
-                break
-            case UISwipeGestureRecognizerDirection.up:
-                self.present(FacebookController(), animated: true, completion: nil)
-                break
-            default:
-                break
-            }
-        }
-    }
-    
-    // Set up UI button responses
-    @objc func buttonAction(sender: UIButton!) {
-        let btnsendtag: UIButton = sender
-        if btnsendtag.tag == 1 {
-            switch recognize {
-                
-                // Sometimes this case needs to run twice to execute the dispatchqueue for some reason, can't figure out why but the swipe down method works for getting rid of recognition UI no matter what
-                case true:
-                    recognize = false
-                    setOutlineColor(recognition: recognize)
-                    do {
-                        DispatchQueue.main.async {
-                            self.shapeLayer.sublayers?.removeAll()
-                            for view in self.labelLayer.subviews {
-                                view.removeFromSuperview()
-                            }
-                        }
-                    }
-                    break
-                case false:
-                    recognize = true
-                    setOutlineColor(recognition: recognize)
-                    break
-                
-            }
-        }
-    }
-    /**************************** END USER RESPONSE METHODS *******************************/
-
 }
 
-extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
+// Random UIImage extension to color icons 
+extension UIImage {
+    func imageWithColor(_ tintColor: UIColor) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
         
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        let context = UIGraphicsGetCurrentContext() as! CGContext
+        context.translateBy(x: 0, y: self.size.height)
+        context.scaleBy(x: 1.0, y: -1.0);
+        context.setBlendMode(.normal)
         
-        let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+        let rect = CGRect(x: 0, y: 0, width: self.size.width, height: self.size.height)
+        context.clip(to: rect, mask: self.cgImage!)
+        tintColor.setFill()
+        context.fill(rect)
         
-        let attachments = CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate)
-        let ciImage = CIImage(cvImageBuffer: pixelBuffer!, options: attachments as! [String : Any]?)
+        let newImage = UIGraphicsGetImageFromCurrentImageContext() as! UIImage
+        UIGraphicsEndImageContext()
         
-        //leftMirrored for front camera
-        let ciImageWithOrientation = ciImage.oriented(forExifOrientation: Int32(UIImageOrientation.leftMirrored.rawValue))
-        
-        if recognize {
-            detectFace(on: ciImageWithOrientation)
-        }
+        return newImage
     }
-    
 }
