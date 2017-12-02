@@ -13,8 +13,6 @@ import SwiftSocket
 
 final class ViewController: UIViewController {
     
-    var photoCount = 0
-    
     // Camera capture object
     var session: AVCaptureSession?
     
@@ -81,8 +79,9 @@ final class ViewController: UIViewController {
     
     // Photo
     var capturedImage = UIImage()
-    var imageArray: [UIImage] = []
+    var imageArray: [UIImage]!
     var rawImageData: Data?
+    var imageString: String?
     
     //------------ Server info --------------//
     let host = "anton's server"
@@ -328,7 +327,12 @@ final class ViewController: UIViewController {
                 transition.subtype = kCATransitionFromRight
                 transition.timingFunction = CAMediaTimingFunction(name:kCAMediaTimingFunctionEaseInEaseOut)
                 view.window!.layer.add(transition, forKey: kCATransition)
-                self.present(TestController(image: self.imageArray[0]), animated: false, completion: nil)
+                if self.imageArray != nil {
+                    let tc = TestController(image: self.imageArray[0])
+                    self.present(tc, animated: false, completion: nil)
+                } else {
+                    self.present(TestController(), animated:false, completion: nil)
+                }
             default:
                 break
             }
@@ -410,6 +414,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
         let ciImageWithOrientation = ciImage.oriented(forExifOrientation: Int32(UIImageOrientation.leftMirrored.rawValue))
         
         if recognize {
+            self.imageArray = []
             detectFace(on: ciImageWithOrientation)
         }
     }
@@ -423,8 +428,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
             photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String: photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
         }
         photoOutput.capturePhoto(with: photoSettings, delegate: self)
-        self.photoCount = self.photoCount + 1
-        print("Photo ", self.photoCount, " captured")
+        print("Photo captured")
     }
     
     func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?, previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Error?) {
@@ -437,6 +441,8 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
                 if let image = UIImage(data: dataImage) {
                     self.capturedImage = image
                     self.imageArray.append(image)
+                    self.rawImageData = UIImagePNGRepresentation(self.imageArray[0]) as Data?
+                    self.imageString = rawImageData?.base64EncodedString()
                 }
             }
         }
@@ -503,7 +509,7 @@ extension ViewController {
                         let when = DispatchTime.now() + 3
                         var work: DispatchWorkItem!
                         work = DispatchWorkItem { [weak self] in
-                            for i in 1...1 {
+                            for _ in 1...1 {
                                 self?.capturePhoto()
                                 break
                             }
