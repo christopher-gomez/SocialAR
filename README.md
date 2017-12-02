@@ -54,7 +54,7 @@ Please read CONTRIBUTING.md for details on our code of conduct, and the process 
 
 ## License
 
-Should we make this open source or keep it proprietary? 
+
 
 ## Acknowledgments
 
