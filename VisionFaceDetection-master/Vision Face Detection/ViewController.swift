@@ -174,7 +174,7 @@ final class ViewController: UIViewController {
         // Ring shape around button
         let circlePath = UIBezierPath(arcCenter: screenSize, radius: CGFloat(0.5*btnCapture.bounds.size.width), startAngle: CGFloat(-rad(value: 90.0)), endAngle: CGFloat(rad(value: 360.0-90.0)), clockwise: true)
         circularOutline.path = circlePath.cgPath
-        setOutlineColor(recognition: self.recognize)
+        setOutlineColor(recognition: 0)
         circularOutline.strokeEnd = 1
         circularOutline.lineWidth = 10
         
@@ -243,17 +243,17 @@ final class ViewController: UIViewController {
     }
     
     // Button color changes depending on current status of recognition
-    func setOutlineColor(recognition: Bool) {
+    func setOutlineColor(recognition: Int) {
         circularOutline.strokeEnd = 0
         switch recognition {
-        case true:
+        case 1:
             // change the fill color
             circularOutline.fillColor = UIColor.clear.cgColor
             
             // animate the rim to look like its thinking (looking for faces)
             animateCaptureButton(recognition)
             break
-        case false:
+        default:
             
             // change the fill color
             circularOutline.fillColor = UIColor.clear.cgColor
@@ -265,9 +265,10 @@ final class ViewController: UIViewController {
         //circularOutline.strokeEnd = 1
     }
     
-    func animateCaptureButton(_ recognition: Bool){
+    func animateCaptureButton(_ status: Int){
         
-        if recognition {
+        switch status {
+        case 1:
             let animcolor = CABasicAnimation(keyPath: "strokeEnd")
             animcolor.fromValue         = 0
             animcolor.toValue           = 1
@@ -277,7 +278,8 @@ final class ViewController: UIViewController {
             animcolor.timingFunction    = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
             circularOutline.strokeColor = UIColor(red: 1, green: 0.2588, blue: 0.2588, alpha: 1.0).cgColor
             circularOutline.add(animcolor, forKey: "strokeEnd")
-        } else {
+            break
+        default:
             let animcolor = CABasicAnimation(keyPath: "strokeEnd")
             animcolor.fromValue         = 0
             animcolor.toValue           = 1
@@ -287,6 +289,8 @@ final class ViewController: UIViewController {
             circularOutline.strokeColor = UIColor.white.cgColor
             circularOutline.add(animcolor, forKey: "strokeEnd")
             circularOutline.strokeEnd = 1
+            break
+        
         }
     }
     
@@ -351,7 +355,7 @@ final class ViewController: UIViewController {
                     // Sometimes this case needs to run twice to execute the dispatchqueue for some reason, can't figure out why but the swipe down method works for getting rid of recognition UI no matter what
                     case true:
                         recognize = false
-                        setOutlineColor(recognition: recognize)
+                        setOutlineColor(recognition: 0)
                         do {
                             DispatchQueue.main.async {
                                 self.shapeLayer.sublayers?.removeAll()
@@ -363,7 +367,7 @@ final class ViewController: UIViewController {
                         break
                     case false:
                         recognize = true
-                        setOutlineColor(recognition: recognize)
+                        setOutlineColor(recognition: 1)
                         break
                 }
                 break
@@ -399,6 +403,56 @@ final class ViewController: UIViewController {
     
     /**************************** END USER RESPONSE METHODS *******************************/
     
+}
+
+// Server stuff in this extension to keep it cleaner
+extension ViewController {
+    
+    func contactHost(){
+        guard let client = client else { return }
+        
+        switch client.connect(timeout: 10) {
+        case .success:
+            print("Connected to host \(client.address)")
+            if let response = sendRequest(string: "GET / HTTP/1.0\r\n\r\n", using: client) {
+                print("contactHost success")
+                print("Response: \(response)")
+            } else {
+                print("No response")
+            }
+            break
+        case .failure(let error):
+            print("contactHost error")
+            print(error)
+            break
+        }
+        print("contactHost complete")
+    }
+    
+    private func sendRequest(string: String, using client: TCPClient) -> String? {
+        print("Sending data ... ")
+        
+        switch client.send(string: string) {
+        case .success:
+            print("sendRequest success")
+            return readResponse(from: client)
+        case .failure(let error):
+            print("sendRequest error")
+            print(error)
+            return nil
+        }
+    }
+    
+    private func readResponse(from client: TCPClient) -> String? {
+        var data = [UInt8]()
+        
+        while true {
+            guard let response = client.read(1024*10, timeout: 2) else { break }
+            data += response
+        }
+        
+        return String(bytes: data, encoding: .utf8)
+    }
 }
 
 extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate {
@@ -520,7 +574,7 @@ extension ViewController {
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         self?.recognize = false
-                        self?.setOutlineColor(recognition: (self?.recognize)!)
+                        self?.setOutlineColor(recognition: 0)
                         DispatchQueue.main.async {
                             self?.shapeLayer.sublayers?.removeAll()
                         }
