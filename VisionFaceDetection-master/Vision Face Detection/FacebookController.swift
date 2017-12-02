@@ -10,13 +10,14 @@ import Foundation
 import FacebookCore
 import FacebookLogin
 import FBSDKLoginKit
+import UIKit
 
 class FacebookController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
+        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
         self.view.addGestureRecognizer(swipeDown)
         

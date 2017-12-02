@@ -8,8 +8,8 @@
 
 import UIKit
 import AVFoundation
-
 import Vision
+import SwiftSocket
 
 final class ViewController: UIViewController {
     
@@ -27,8 +27,7 @@ final class ViewController: UIViewController {
     // Capture Button Outline
     var circularOutline = CAShapeLayer()
     
-    // flash button layer
-    let imageView = UIImageView()
+    let flashBtn = UIButton(type: .custom)
 
     // Label UI Layer
     let labelLayer = UIView()
@@ -81,7 +80,15 @@ final class ViewController: UIViewController {
     var videoDeviceInput: AVCaptureDeviceInput!
     
     // Photo
-    var capturedImage = UIImageView()
+    var capturedImage = UIImage()
+    var imageArray: [UIImage] = []
+    var rawImageData: Data?
+    
+    //------------ Server info --------------//
+    let host = "anton's server"
+    let port = 80
+    var client: TCPClient?
+    //---------------------------------------//
     
     /***************************** LIFECYCLE HOOKS **********************************/
     
@@ -93,12 +100,16 @@ final class ViewController: UIViewController {
         
         // set up gesture support
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
-        let swipeUp = UISwipeGestureRecognizer(target:self, action: #selector(self.respondToSwipeGesture))
+        let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
+        let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
         swipeDown.direction = UISwipeGestureRecognizerDirection.down
         swipeUp.direction = UISwipeGestureRecognizerDirection.up
+        swipeLeft.direction = UISwipeGestureRecognizerDirection.left
         self.view.addGestureRecognizer(swipeDown)
         self.view.addGestureRecognizer(swipeUp)
+        self.view.addGestureRecognizer(swipeLeft)
         
+        self.client = TCPClient(address: host, port: Int32(port))
         self.sessionPrepare()
         self.session?.startRunning()
     }
@@ -120,7 +131,7 @@ final class ViewController: UIViewController {
         shapeLayer.frame = view.frame
     }
     
-    // This method executes after viewWillAppear(), to methods down from viewDidLoad()
+    // This method executes after viewWillAppear(), two methods down from viewDidLoad()
     override func viewDidAppear(_ animated: Bool) {
         
         // super
@@ -133,7 +144,7 @@ final class ViewController: UIViewController {
         view.layer.addSublayer(previewLayer)
         
         // Set up the Vision detection layer
-        shapeLayer.strokeColor = UIColor.red.cgColor
+        shapeLayer.strokeColor = UIColor(red: 1, green: 0.2588, blue: 0.2588, alpha: 1.0).cgColor
         shapeLayer.lineWidth = 2.0
         shapeLayer.setAffineTransform(CGAffineTransform(scaleX: 1, y: -1))
         view.layer.addSublayer(shapeLayer)
@@ -142,13 +153,10 @@ final class ViewController: UIViewController {
         self.view.addSubview(labelLayer)
         
         // set up the flash button
-        let flashBtn = UIButton(type: .custom)
-        flashBtn.frame = CGRect(x: self.view.frame.maxX-50, y: 20, width: 50, height: 50)
+        flashBtn.frame = CGRect(x: self.view.frame.maxX-50, y: 40, width: 35, height: 35)
         flashBtn.layer.cornerRadius = 0.5*flashBtn.bounds.size.width
-        let image = UIImage(named: "lightning")
-        let templateImage = image?.withRenderingMode(.alwaysTemplate)
-        self.imageView.image = templateImage?.imageWithColor(UIColor.white)
-        flashBtn.setImage(imageView.image, for: .normal)
+        let image = UIImage(named: "flash_white")
+        flashBtn.setImage(image?.withRenderingMode(.alwaysOriginal), for: .normal)
         flashBtn.clipsToBounds = true
         flashBtn.tag = 2
         flashBtn.addTarget(self, action: #selector(buttonAction), for: .touchUpInside)
@@ -168,6 +176,7 @@ final class ViewController: UIViewController {
         let circlePath = UIBezierPath(arcCenter: screenSize, radius: CGFloat(0.5*btnCapture.bounds.size.width), startAngle: CGFloat(-rad(value: 90.0)), endAngle: CGFloat(rad(value: 360.0-90.0)), clockwise: true)
         circularOutline.path = circlePath.cgPath
         setOutlineColor(recognition: self.recognize)
+        circularOutline.strokeEnd = 1
         circularOutline.lineWidth = 10
         
         // adding a circular outline to a shape layer in the button layer
@@ -236,25 +245,49 @@ final class ViewController: UIViewController {
     
     // Button color changes depending on current status of recognition
     func setOutlineColor(recognition: Bool) {
-        
+        circularOutline.strokeEnd = 0
         switch recognition {
         case true:
-            
             // change the fill color
             circularOutline.fillColor = UIColor.clear.cgColor
             
-            // you can change the stroke color
-            circularOutline.strokeColor = UIColor.blue.cgColor
-            
+            // animate the rim to look like its thinking (looking for faces)
+            animateCaptureButton(recognition)
             break
         case false:
             
             // change the fill color
             circularOutline.fillColor = UIColor.clear.cgColor
             
-            // you can change the stroke color
-            circularOutline.strokeColor = UIColor.white.cgColor
+            // unanimate the rim
+            animateCaptureButton(recognition)
             break
+        }
+        //circularOutline.strokeEnd = 1
+    }
+    
+    func animateCaptureButton(_ recognition: Bool){
+        
+        if recognition {
+            let animcolor = CABasicAnimation(keyPath: "strokeEnd")
+            animcolor.fromValue         = 0
+            animcolor.toValue           = 1
+            animcolor.duration          = 1
+            animcolor.repeatCount       = .infinity
+            animcolor.autoreverses      = true
+            animcolor.timingFunction    = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+            circularOutline.strokeColor = UIColor(red: 1, green: 0.2588, blue: 0.2588, alpha: 1.0).cgColor
+            circularOutline.add(animcolor, forKey: "strokeEnd")
+        } else {
+            let animcolor = CABasicAnimation(keyPath: "strokeEnd")
+            animcolor.fromValue         = 0
+            animcolor.toValue           = 1
+            animcolor.duration          = 1
+            animcolor.repeatCount       = 0
+            animcolor.autoreverses      = false
+            circularOutline.strokeColor = UIColor.white.cgColor
+            circularOutline.add(animcolor, forKey: "strokeEnd")
+            circularOutline.strokeEnd = 1
         }
     }
     
@@ -288,6 +321,14 @@ final class ViewController: UIViewController {
             case UISwipeGestureRecognizerDirection.up:
                 self.present(FacebookController(), animated: true, completion: nil)
                 break
+            case UISwipeGestureRecognizerDirection.left:
+                let transition = CATransition()
+                transition.duration = 0.5
+                transition.type = kCATransitionPush
+                transition.subtype = kCATransitionFromRight
+                transition.timingFunction = CAMediaTimingFunction(name:kCAMediaTimingFunctionEaseInEaseOut)
+                view.window!.layer.add(transition, forKey: kCATransition)
+                self.present(TestController(image: self.imageArray[0]), animated: false, completion: nil)
             default:
                 break
             }
@@ -298,6 +339,8 @@ final class ViewController: UIViewController {
     @objc func buttonAction(sender: UIButton!) {
         let btnsendtag: UIButton = sender
         switch btnsendtag.tag {
+            
+            // Capture Button
             case 1:
                 switch recognize {
                 
@@ -320,14 +363,18 @@ final class ViewController: UIViewController {
                         break
                 }
                 break
+            
+            // Flash Button 
             case 2:
                 if (backCamera?.hasTorch)! {
                     do {
                         try backCamera?.lockForConfiguration()
                         
                         if (backCamera?.isTorchActive)! == true {
+                            flashBtn.setImage(UIImage(named: "flash_white")?.withRenderingMode(.alwaysOriginal), for: .normal)
                             backCamera?.torchMode = .off
                         } else {
+                            flashBtn.setImage(UIImage(named: "flash_yellow")?.withRenderingMode(.alwaysOriginal), for: .normal)
                             backCamera?.torchMode = .on
                         }
                         
@@ -388,7 +435,8 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
             if let sampleBuffer = photoSampleBuffer, let previewBuffer = previewPhotoSampleBuffer, let dataImage = AVCapturePhotoOutput.jpegPhotoDataRepresentation(forJPEGSampleBuffer: sampleBuffer, previewPhotoSampleBuffer: previewBuffer) {
                 
                 if let image = UIImage(data: dataImage) {
-                    self.capturedImage.image = image
+                    self.capturedImage = image
+                    self.imageArray.append(image)
                 }
             }
         }
@@ -403,7 +451,6 @@ extension ViewController {
             if !results.isEmpty {
                 faceLandmarks.inputFaceObservations = results
                 detectLandmarks(on: image)
-                
                 DispatchQueue.main.async {
                     self.shapeLayer.sublayers?.removeAll()
                     /*for view in self.labelLayer.subviews {
@@ -508,7 +555,7 @@ extension ViewController {
     
     func draw(points: [(x: CGFloat, y: CGFloat)]) {
         let newLayer = CAShapeLayer()
-        newLayer.strokeColor = UIColor.red.cgColor
+        newLayer.strokeColor = UIColor(red: 1, green: 0.2588, blue: 0.2588, alpha: 1.0).cgColor
         newLayer.lineWidth = 2.0
         let path = UIBezierPath()
         path.move(to: CGPoint(x: points[0].x, y: points[0].y))
@@ -523,7 +570,7 @@ extension ViewController {
     }
 }
 
-// Random UIImage extension to color icons 
+// Random UIImage extension to color icons
 extension UIImage {
     func imageWithColor(_ tintColor: UIColor) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
