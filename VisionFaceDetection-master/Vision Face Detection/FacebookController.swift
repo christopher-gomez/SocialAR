@@ -59,6 +59,10 @@ class FacebookController: UIViewController {
                     self.relationship_status = relationship_status
                 }
                 
+                if let birthday = response["birthday"] as? String {
+                    self.birthday = birthday
+                }
+                
                 if let email = response["email"] as? String {
                     self.email = email
                 }
@@ -119,11 +123,11 @@ class FacebookController: UIViewController {
                     //print("My birthday is \(response.birthday!)")
                     //print("My relationship status is \(response.relationship_status!)")
                     print("My email is \(response.email!)")
-                    profile.text = "Name: \(response.name!) \nGender: \(response.gender!) \nEmail: \(response.email!)"
+                    profile.text = "Name: \(response.name!) \nGender: \(response.gender!)"
                     let pictureURL = "https://graph.facebook.com/\(response.id!)/picture?type=large&return_ssl_resources=1"
                     self.profilePicture.frame = CGRect(x: self.view.frame.midX-125, y: 225, width: 100, height: 100)
                     self.profilePicture.center = CGPoint(x: self.view.frame.midX-125, y: 225)
-                    self.profilePicture.image = UIImage(data: NSData(contentsOf: URL(string: pictureURL)!)! as! Data)
+                    self.profilePicture.image = UIImage(data: NSData(contentsOf: URL(string: pictureURL)!)! as Data)
                 case .failed(let error):
                     print("Custom Graph Request Failed: \(error)")
                 }
@@ -155,16 +159,19 @@ class FacebookController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         profilePicture = UIImageView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         if AccessToken.current == nil {
             profilePicture.center = CGPoint(x: view.frame.midX, y: view.frame.maxY - 100)
             profilePicture.image = UIImage(named: "fb-art")
         }
-        view.addSubview(profilePicture)
-        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
-        swipeDown.direction = UISwipeGestureRecognizerDirection.down
-        self.view.addGestureRecognizer(swipeDown)
         
+        if AccessToken.current != nil {
+            let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
+            swipeDown.direction = UISwipeGestureRecognizerDirection.down
+            self.view.addGestureRecognizer(swipeDown)
+        }
+        view.addSubview(profilePicture)
         self.loadData()
     }
     
@@ -195,26 +202,25 @@ class FacebookController: UIViewController {
     func loginManagerDidComplete(_ result: LoginResult) {
         let alert: UIAlertController
         switch result {
-        case .cancelled:
-            alert = UIAlertController(title: "Login Cancelled", message: "User cancelled login.", preferredStyle: UIAlertControllerStyle.alert)
-            alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default)
-            { action -> Void in
-                alert.dismiss(animated: true, completion: nil)
-            })
         case .failed(let error):
             alert = UIAlertController(title: "Login Fail", message: "Login failed with error \(error)", preferredStyle: UIAlertControllerStyle.alert)
             alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default)
             { action -> Void in
                 alert.dismiss(animated: true, completion: nil)
             })
+            self.present(alert, animated: true, completion: nil)
+            break
         case .success(_, _, _):
             alert = UIAlertController(title: "Login Success",  message: "Login succeeded. To get back to this page just swipe up.", preferredStyle: UIAlertControllerStyle.alert)
             alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default)
             { action -> Void in
                 self.dismiss(animated: true, completion: nil)
             })
+            self.present(alert, animated: true, completion: nil)
+            break
+        case .cancelled:
+            break
         }
-        self.present(alert, animated: true, completion: nil)
     }
     
     @objc func loginWithReadPermissions() {
