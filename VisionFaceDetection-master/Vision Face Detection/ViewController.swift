@@ -9,6 +9,9 @@
 import UIKit
 import AVFoundation
 import Vision
+import FacebookCore
+import FacebookLogin
+import FBSDKLoginKit
 import SwiftSocket
 
 final class ViewController: UIViewController {
@@ -115,6 +118,11 @@ final class ViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
+        
+        AccessToken.refreshCurrentToken()
+        
+        print("view will appear")
+        
     }
     
     // This method lets the app know what our layer bounds are
@@ -135,6 +143,14 @@ final class ViewController: UIViewController {
         
         // super
         super.viewDidAppear(animated)
+        
+        AccessToken.refreshCurrentToken()
+        
+        if AccessToken.current == nil {
+            do {
+                self.present(FacebookController(), animated: true, completion: nil)
+            }
+        }
         
         let screenSize: CGPoint = CGPoint(x: UIScreen.main.bounds.midX, y: UIScreen.main.bounds.maxY-90)
         

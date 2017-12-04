@@ -8,5 +8,9 @@ target 'Vision Face Detection' do
     pod 'FacebookLogin'
     pod 'FacebookShare'
     pod 'SwiftSocket'
+    pod 'Firebase/Core'
+    pod 'Firebase/Auth'
+    pod 'FirebaseUI/Auth'
+    pod 'FirebaseUI/Facebook'
 
 end

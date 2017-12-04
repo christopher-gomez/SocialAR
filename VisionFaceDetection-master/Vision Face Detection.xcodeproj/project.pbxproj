@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6D3E31D3B24F302EDE540637 /* Pods_Vision_Face_Detection.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F8E91605D1638AE661BE770 /* Pods_Vision_Face_Detection.framework */; };
 		8320F7CC1FCEA9C60003149D /* FacebookController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8320F7CB1FCEA9C60003149D /* FacebookController.swift */; };
+		834D95AF1FD4ABAA004D7A49 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 834D95AE1FD4ABAA004D7A49 /* GoogleService-Info.plist */; };
 		8357CB9E1FD276AE00F2610C /* TestController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8357CB9D1FD276AE00F2610C /* TestController.swift */; };
 		E56B7E711EFD261E006704F3 /* CGRect+Scaled.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56B7E701EFD261E006704F3 /* CGRect+Scaled.swift */; };
 		E5E2CD531EFA419000EBCCBF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E2CD521EFA419000EBCCBF /* AppDelegate.swift */; };
@@ -21,6 +22,7 @@
 		5F8E91605D1638AE661BE770 /* Pods_Vision_Face_Detection.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Vision_Face_Detection.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		69FD223B17CFB5BA6589C99E /* Pods-Vision Face Detection.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Vision Face Detection.release.xcconfig"; path = "Pods/Target Support Files/Pods-Vision Face Detection/Pods-Vision Face Detection.release.xcconfig"; sourceTree = "<group>"; };
 		8320F7CB1FCEA9C60003149D /* FacebookController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacebookController.swift; sourceTree = "<group>"; };
+		834D95AE1FD4ABAA004D7A49 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "../../../../../Downloads/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		8357CB9D1FD276AE00F2610C /* TestController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestController.swift; sourceTree = "<group>"; };
 		99BB03141FCC227200958605 /* Vision Face Detection.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Vision Face Detection.entitlements"; sourceTree = "<group>"; };
 		E56B7E701EFD261E006704F3 /* CGRect+Scaled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Scaled.swift"; sourceTree = "<group>"; };
@@ -92,6 +94,7 @@
 				E5E2CD591EFA419000EBCCBF /* Assets.xcassets */,
 				E5E2CD5B1EFA419000EBCCBF /* LaunchScreen.storyboard */,
 				E5E2CD5E1EFA419000EBCCBF /* Info.plist */,
+				834D95AE1FD4ABAA004D7A49 /* GoogleService-Info.plist */,
 			);
 			path = "Vision Face Detection";
 			sourceTree = "<group>";
@@ -164,6 +167,7 @@
 			files = (
 				E5E2CD5D1EFA419000EBCCBF /* LaunchScreen.storyboard in Resources */,
 				E5E2CD5A1EFA419000EBCCBF /* Assets.xcassets in Resources */,
+				834D95AF1FD4ABAA004D7A49 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,7 +206,10 @@
 				"${BUILT_PRODUCTS_DIR}/FacebookCore/FacebookCore.framework",
 				"${BUILT_PRODUCTS_DIR}/FacebookLogin/FacebookLogin.framework",
 				"${BUILT_PRODUCTS_DIR}/FacebookShare/FacebookShare.framework",
+				"${BUILT_PRODUCTS_DIR}/GTMSessionFetcher/GTMSessionFetcher.framework",
+				"${BUILT_PRODUCTS_DIR}/GoogleToolboxForMac/GoogleToolboxForMac.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftSocket/SwiftSocket.framework",
+				"${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
@@ -213,7 +220,10 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FacebookCore.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FacebookLogin.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FacebookShare.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMSessionFetcher.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleToolboxForMac.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftSocket.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -226,9 +236,13 @@
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-Vision Face Detection/Pods-Vision Face Detection-resources.sh",
+				$PODS_CONFIGURATION_BUILD_DIR/FirebaseUI/FirebaseAuthUI.bundle,
+				$PODS_CONFIGURATION_BUILD_DIR/FirebaseUI/FirebaseFacebookAuthUI.bundle,
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -380,7 +394,7 @@
 				DEVELOPMENT_TEAM = 599CZ4P234;
 				INFOPLIST_FILE = "Vision Face Detection/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.chrisgomez.test;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chrisgomez.socialar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -396,7 +410,7 @@
 				DEVELOPMENT_TEAM = 599CZ4P234;
 				INFOPLIST_FILE = "Vision Face Detection/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.chrisgomez.test;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chrisgomez.socialar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
