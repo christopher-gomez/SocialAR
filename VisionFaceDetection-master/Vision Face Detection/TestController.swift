@@ -22,8 +22,8 @@ class TestController: UIViewController {
     var textView: UITextView?
     
     //------------ Server info --------------//
-    let host = "apple.com"
-    let port = 80
+    let host = "172.28.172.34"
+    let port = 5019
     var client: TCPClient?
     //---------------------------------------//
     
@@ -89,7 +89,7 @@ class TestController: UIViewController {
         switch client.connect(timeout: 10) {
         case .success:
             appendToTextField(string: "Connected to host \(client.address)")
-            if let response = sendRequest(string: "GET / HTTP/1.0\r\n\r\n", using: client) {
+            if let response = sendRequest(string: "", using: client) {
                 appendToTextField(string: "contactHost success")
                 appendToTextField(string: "Response: \(response)")
             } else {

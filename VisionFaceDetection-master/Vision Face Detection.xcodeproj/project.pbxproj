@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		6D3E31D3B24F302EDE540637 /* Pods_Vision_Face_Detection.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F8E91605D1638AE661BE770 /* Pods_Vision_Face_Detection.framework */; };
+		830EC00E1FD5F7C000BC603F /* ProfileController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830EC00D1FD5F7C000BC603F /* ProfileController.swift */; };
+		830EC0101FD5F94700BC603F /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830EC00F1FD5F94700BC603F /* Colors.swift */; };
 		8320F7CC1FCEA9C60003149D /* FacebookController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8320F7CB1FCEA9C60003149D /* FacebookController.swift */; };
 		834D95AF1FD4ABAA004D7A49 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 834D95AE1FD4ABAA004D7A49 /* GoogleService-Info.plist */; };
 		8357CB9E1FD276AE00F2610C /* TestController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8357CB9D1FD276AE00F2610C /* TestController.swift */; };
@@ -21,6 +23,8 @@
 /* Begin PBXFileReference section */
 		5F8E91605D1638AE661BE770 /* Pods_Vision_Face_Detection.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Vision_Face_Detection.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		69FD223B17CFB5BA6589C99E /* Pods-Vision Face Detection.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Vision Face Detection.release.xcconfig"; path = "Pods/Target Support Files/Pods-Vision Face Detection/Pods-Vision Face Detection.release.xcconfig"; sourceTree = "<group>"; };
+		830EC00D1FD5F7C000BC603F /* ProfileController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileController.swift; sourceTree = "<group>"; };
+		830EC00F1FD5F94700BC603F /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		8320F7CB1FCEA9C60003149D /* FacebookController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FacebookController.swift; sourceTree = "<group>"; };
 		834D95AE1FD4ABAA004D7A49 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "../../../../../Downloads/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		8357CB9D1FD276AE00F2610C /* TestController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestController.swift; sourceTree = "<group>"; };
@@ -90,6 +94,8 @@
 				E5E2CD541EFA419000EBCCBF /* ViewController.swift */,
 				8357CB9D1FD276AE00F2610C /* TestController.swift */,
 				8320F7CB1FCEA9C60003149D /* FacebookController.swift */,
+				830EC00F1FD5F94700BC603F /* Colors.swift */,
+				830EC00D1FD5F7C000BC603F /* ProfileController.swift */,
 				E56B7E701EFD261E006704F3 /* CGRect+Scaled.swift */,
 				E5E2CD591EFA419000EBCCBF /* Assets.xcassets */,
 				E5E2CD5B1EFA419000EBCCBF /* LaunchScreen.storyboard */,
@@ -259,8 +265,10 @@
 				8357CB9E1FD276AE00F2610C /* TestController.swift in Sources */,
 				E56B7E711EFD261E006704F3 /* CGRect+Scaled.swift in Sources */,
 				8320F7CC1FCEA9C60003149D /* FacebookController.swift in Sources */,
+				830EC0101FD5F94700BC603F /* Colors.swift in Sources */,
 				E5E2CD551EFA419000EBCCBF /* ViewController.swift in Sources */,
 				E5E2CD531EFA419000EBCCBF /* AppDelegate.swift in Sources */,
+				830EC00E1FD5F7C000BC603F /* ProfileController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

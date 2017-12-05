@@ -14,7 +14,11 @@ import UIKit
 
 class FacebookController: UIViewController {
     
-    var profilePicture: UIImageView!
+    var profilePicture: UIImage!
+    var profilePictureView: UIImageView!
+    var userName: String!
+    var welcomeLabel: UILabel!
+    var buttonTitle: String!
     
     struct ProfileRequest: GraphRequestProtocol {
         
@@ -81,6 +85,10 @@ class FacebookController: UIViewController {
     
     func loadData(){
         
+        for view in self.view.subviews {
+            view.removeFromSuperview()
+        }
+        
         AccessToken.refreshCurrentToken()
         
         let colors = Colors()
@@ -111,6 +119,9 @@ class FacebookController: UIViewController {
         displayLogin()
         
         if AccessToken.current != nil{
+            
+            self.welcomeLabel = nil
+            self.buttonTitle = nil
             let profile = UILabel(frame: CGRect(x: self.view.frame.midX+75, y: 225, width:self.view.frame.size.width - 100, height: 225))
             let connection = GraphRequestConnection()
             connection.add(ProfileRequest()) { response, result in
@@ -125,9 +136,10 @@ class FacebookController: UIViewController {
                     print("My email is \(response.email!)")
                     profile.text = "Name: \(response.name!) \nGender: \(response.gender!)"
                     let pictureURL = "https://graph.facebook.com/\(response.id!)/picture?type=large&return_ssl_resources=1"
-                    self.profilePicture.frame = CGRect(x: self.view.frame.midX-125, y: 225, width: 100, height: 100)
-                    self.profilePicture.center = CGPoint(x: self.view.frame.midX-125, y: 225)
-                    self.profilePicture.image = UIImage(data: NSData(contentsOf: URL(string: pictureURL)!)! as Data)
+                    self.profilePictureView.frame = CGRect(x: self.view.frame.midX-125, y: 225, width: 100, height: 100)
+                    self.profilePictureView.center = CGPoint(x: self.view.frame.midX-125, y: 225)
+                    self.profilePicture = UIImage(data: NSData(contentsOf: URL(string: pictureURL)!)! as Data)
+                    self.profilePictureView.image = self.profilePicture
                 case .failed(let error):
                     print("Custom Graph Request Failed: \(error)")
                 }
@@ -142,8 +154,19 @@ class FacebookController: UIViewController {
             profile.lineBreakMode = .byWordWrapping
             profile.adjustsFontSizeToFitWidth = true
             self.view.addSubview(profile)
+            let tip = UILabel(frame: CGRect(x: self.view.frame.midX, y: self.view.frame.maxY - 20, width: self.view.frame.width - 20, height: 100))
+            tip.center = CGPoint(x: self.view.frame.midX, y: self.view.frame.maxY - 20)
+            tip.text = "Tip: To get back to this screen swipe up at any time."
+            tip.textColor = UIColor.white
+            tip.textAlignment = .center
+            tip.numberOfLines = 1
+            tip.font = UIFont.preferredFont(forTextStyle: .footnote)
+            tip.font = UIFont(name: "Avenir-Light", size: 15)
+            tip.lineBreakMode = .byWordWrapping
+            tip.adjustsFontSizeToFitWidth = true
+            self.view.addSubview(tip)
         } else {
-            let welcomeLabel = UILabel(frame: CGRect(x: self.view.frame.midX, y: 200, width: self.view.frame.size.width - 100, height: 300))
+            welcomeLabel = UILabel(frame: CGRect(x: self.view.frame.midX, y: 200, width: self.view.frame.size.width - 100, height: 300))
             welcomeLabel.center = CGPoint(x: self.view.frame.midX, y: 200)
             welcomeLabel.text = "Please login with Facebook to continue."
             welcomeLabel.textColor = UIColor.white
@@ -160,19 +183,18 @@ class FacebookController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        profilePicture = UIImageView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        self.loadData()
+        profilePictureView = UIImageView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         if AccessToken.current == nil {
-            profilePicture.center = CGPoint(x: view.frame.midX, y: view.frame.maxY - 100)
-            profilePicture.image = UIImage(named: "fb-art")
+            profilePictureView.center = CGPoint(x: view.frame.midX, y: view.frame.maxY - 100)
+            profilePictureView.image = UIImage(named: "fb-art")
         }
-        
+        view.addSubview(profilePictureView)
         if AccessToken.current != nil {
             let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.respondToSwipeGesture))
             swipeDown.direction = UISwipeGestureRecognizerDirection.down
             self.view.addGestureRecognizer(swipeDown)
         }
-        view.addSubview(profilePicture)
-        self.loadData()
     }
     
     /*********************** FACEBOOK METHODS ********************************/
@@ -187,12 +209,17 @@ class FacebookController: UIViewController {
         button.layer.borderColor = UIColor.magenta.cgColor
         
         if AccessToken.current == nil {
-            button.setTitle("Login to Facebook", for: .normal)
+            buttonTitle = nil
+            buttonTitle = "Login to Facebook"
+            button.setTitle(buttonTitle, for: .normal)
             button.addTarget(self, action: #selector(loginWithReadPermissions), for: .touchUpInside)
         } else {
-            button.setTitle("Logout of Facebook", for: .normal)
+            buttonTitle = nil
+            buttonTitle = "Logout of Facebook"
+            button.setTitle(buttonTitle, for: .normal)
             button.addTarget(self, action: #selector(logOut), for: .touchUpInside)
         }
+        
         button.center = CGPoint(x: self.view.frame.midX, y: 400)
         
         //loginButton.center = CGPoint(x: self.view.frame.midX, y: 400)
@@ -211,10 +238,18 @@ class FacebookController: UIViewController {
             self.present(alert, animated: true, completion: nil)
             break
         case .success(_, _, _):
-            alert = UIAlertController(title: "Login Success",  message: "Login succeeded. To get back to this page just swipe up.", preferredStyle: UIAlertControllerStyle.alert)
+            alert = UIAlertController(title: "Login Success",  message: "Login succeeded. Please take some time to review your information.", preferredStyle: UIAlertControllerStyle.alert)
             alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default)
             { action -> Void in
-                self.dismiss(animated: true, completion: nil)
+                let transition = CATransition()
+                transition.duration = 0.5
+                transition.type = kCATransitionPush
+                transition.subtype = kCATransitionFromRight
+                transition.timingFunction = CAMediaTimingFunction(name:kCAMediaTimingFunctionEaseInEaseOut)
+                self.view.window!.layer.add(transition, forKey: kCATransition)
+                self.present(ProfileController(), animated: false, completion: nil)
+                self.viewDidLoad()
+                self.viewDidLayoutSubviews()
             })
             self.present(alert, animated: true, completion: nil)
             break
@@ -266,16 +301,3 @@ class FacebookController: UIViewController {
     }
 }
 
-class Colors {
-    
-    var gl:CAGradientLayer!
-    
-    init() {
-        let colorTop = UIColor(red:0.99, green:0.27, blue:0.42, alpha:1.0).cgColor
-        let colorBottom = UIColor(red:0.25, green:0.37, blue:0.98, alpha:1.0).cgColor
-        
-        self.gl = CAGradientLayer()
-        self.gl.colors = [colorTop, colorBottom]
-        self.gl.locations = [0.0, 1.0]
-    }
-}

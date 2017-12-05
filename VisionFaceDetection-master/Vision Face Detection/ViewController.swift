@@ -109,7 +109,7 @@ final class ViewController: UIViewController {
         swipeLeft.direction = UISwipeGestureRecognizerDirection.left
         self.view.addGestureRecognizer(swipeDown)
         self.view.addGestureRecognizer(swipeUp)
-        self.view.addGestureRecognizer(swipeLeft)
+        // self.view.addGestureRecognizer(swipeLeft)
         
         self.client = TCPClient(address: host, port: Int32(port))
         self.sessionPrepare()
@@ -120,9 +120,6 @@ final class ViewController: UIViewController {
         super.viewWillAppear(true)
         
         AccessToken.refreshCurrentToken()
-        
-        print("view will appear")
-        
     }
     
     // This method lets the app know what our layer bounds are
@@ -340,19 +337,6 @@ final class ViewController: UIViewController {
             case UISwipeGestureRecognizerDirection.up:
                 self.present(FacebookController(), animated: true, completion: nil)
                 break
-            case UISwipeGestureRecognizerDirection.left:
-                let transition = CATransition()
-                transition.duration = 0.5
-                transition.type = kCATransitionPush
-                transition.subtype = kCATransitionFromRight
-                transition.timingFunction = CAMediaTimingFunction(name:kCAMediaTimingFunctionEaseInEaseOut)
-                view.window!.layer.add(transition, forKey: kCATransition)
-                if self.imageArray != nil {
-                    let tc = TestController(image: self.imageArray[0])
-                    self.present(tc, animated: false, completion: nil)
-                } else {
-                    self.present(TestController(), animated:false, completion: nil)
-                }
             default:
                 break
             }
