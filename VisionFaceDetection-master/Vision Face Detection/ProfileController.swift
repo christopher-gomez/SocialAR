@@ -23,8 +23,8 @@ class ProfileController: UIViewController, UIImagePickerControllerDelegate, UINa
     var imageString: String?
 
     //------------ Server info --------------//
-    let host = "172.28.172.34"
-    let port = 5022
+    let host = "172.31.99.190"
+    let port = 5024
     var client: TCPClient?
     //---------------------------------------//
 

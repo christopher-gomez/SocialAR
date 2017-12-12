@@ -13,6 +13,7 @@ import FacebookCore
 import FacebookLogin
 import FBSDKLoginKit
 import SwiftSocket
+import ARKit
 
 final class ViewController: UIViewController {
     
@@ -85,10 +86,13 @@ final class ViewController: UIViewController {
     var imageArray: [UIImage]!
     var rawImageData: Data?
     var imageString: String?
+    var faceLocation: CGPoint?
+    
+    var userName: String?
     
     //------------ Server info --------------//
-    let host = "anton's server"
-    let port = 80
+    let host = "172.31.99.190"
+    let port = 5024
     var client: TCPClient?
     //---------------------------------------//
     
@@ -292,6 +296,16 @@ final class ViewController: UIViewController {
             circularOutline.strokeColor = UIColor(red: 1, green: 0.2588, blue: 0.2588, alpha: 1.0).cgColor
             circularOutline.add(animcolor, forKey: "strokeEnd")
             break
+        case 2:
+            let animcolor = CABasicAnimation(keyPath: "strokeEnd")
+            animcolor.fromValue         = 0
+            animcolor.toValue           = 1
+            animcolor.duration          = 1
+            animcolor.repeatCount       = .infinity
+            animcolor.autoreverses      = true
+            animcolor.timingFunction    = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+            circularOutline.strokeColor = UIColor.blue.cgColor
+            circularOutline.add(animcolor, forKey: "strokeEnd")
         default:
             let animcolor = CABasicAnimation(keyPath: "strokeEnd")
             animcolor.fromValue         = 0
@@ -408,27 +422,6 @@ final class ViewController: UIViewController {
 // Server stuff in this extension to keep it cleaner
 extension ViewController {
     
-    func contactHost(){
-        guard let client = client else { return }
-        
-        switch client.connect(timeout: 10) {
-        case .success:
-            print("Connected to host \(client.address)")
-            if let response = sendRequest(string: "GET / HTTP/1.0\r\n\r\n", using: client) {
-                print("contactHost success")
-                print("Response: \(response)")
-            } else {
-                print("No response")
-            }
-            break
-        case .failure(let error):
-            print("contactHost error")
-            print(error)
-            break
-        }
-        print("contactHost complete")
-    }
-    
     private func sendRequest(string: String, using client: TCPClient) -> String? {
         print("Sending data ... ")
         
@@ -497,6 +490,10 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptur
                     self.imageArray.append(image)
                     self.rawImageData = UIImagePNGRepresentation(self.imageArray[0]) as Data?
                     self.imageString = rawImageData?.base64EncodedString()
+                    // send image to server here and wait for a response, place label on the screen.
+                }
+                DispatchQueue.main.async {
+                    self.drawLabel(location: (self.faceLocation!))
                 }
             }
         }
@@ -525,12 +522,12 @@ extension ViewController {
     func detectLandmarks(on image: CIImage) {
         try? faceLandmarksDetectionRequest.perform([faceLandmarks], on: image)
         if let landmarksResults = faceLandmarks.results as? [VNFaceObservation] {
+            self.faceLocation = CGPoint(x: (self.faceLandmarks.inputFaceObservations?.first?.boundingBox.scaled(to: self.view.bounds.size).midX)!, y: ((self.faceLandmarks.inputFaceObservations?.first?.boundingBox.scaled(to: self.view.bounds.size).minY)! - 150))
             for observation in landmarksResults {
                 var work: DispatchWorkItem!
                 work = DispatchWorkItem { [weak self] in
                     if let boundingBox = self?.faceLandmarks.inputFaceObservations?.first?.boundingBox {
                         let faceBoundingBox = boundingBox.scaled(to: (self?.view.bounds.size)!)
-                        
                         //different types of landmarks
                         let faceContour = observation.landmarks?.faceContour
                         self?.convertPointsForFace(faceContour, faceBoundingBox)
@@ -585,17 +582,40 @@ extension ViewController {
             }
         }
     }
-    
-    func drawLabel() {
+    func drawLabel(location: CGPoint) {
+        self.animateCaptureButton(2)
+        guard let client = client else { return }
+        switch client.connect(timeout: 10) {
+        case .success:
+            print("Connected to host \(client.address)")
+            if let response1 = sendRequest(string: "2\n", using: client) {
+                print("Response: \(response1)")
+                if let response2 = sendRequest(string: self.imageString!, using: client) {
+                    print("Response: \(response2)")
+                    if let nameResponse = sendRequest(string: "Expecting a name", using: client) {
+                        print("Response: \(nameResponse)")
+                        let _ = sendRequest(string: "Receiving a name", using: client)
+                        self.userName = nameResponse
+                    }
+                }
+            }
+            break
+        case .failure(let error):
+            print("contactHost error")
+            print(error)
+        }
         let screenSize = UIScreen.main.bounds
-        let label = UILabel(frame: CGRect(x: 0, y: 0, width: screenSize.size.width, height: screenSize.size.height))
+        let label = UILabel(frame: CGRect(x: location.x, y: location.y, width: screenSize.size.width, height: screenSize.size.height))
         label.font = UIFont.preferredFont(forTextStyle: .headline)
         label.textColor = .white
         label.numberOfLines = 0
         label.adjustsFontSizeToFitWidth = true
-        label.center = CGPoint(x: screenSize.size.width/2, y:screenSize.size.height/10)
+        label.center = CGPoint(x: location.x, y: location.y)
         label.textAlignment = .center
-        label.text = "I am a test label"
+        label.text = userName!
+        label.layer.position = CGPoint(x: location.x, y: location.y)
+        label.layer.zPosition = 1
+        self.animateCaptureButton(0)
         self.labelLayer.addSubview(label)
     }
     

@@ -23,7 +23,7 @@ class TestController: UIViewController {
     
     //------------ Server info --------------//
     let host = "172.28.172.34"
-    let port = 5019
+    let port = 5022
     var client: TCPClient?
     //---------------------------------------//
     
@@ -89,9 +89,11 @@ class TestController: UIViewController {
         switch client.connect(timeout: 10) {
         case .success:
             appendToTextField(string: "Connected to host \(client.address)")
-            if let response = sendRequest(string: "", using: client) {
-                appendToTextField(string: "contactHost success")
+            if let response = sendRequest(string: "1\n", using: client) {
                 appendToTextField(string: "Response: \(response)")
+                if let response = sendRequest(string: "chris gomez", using: client) {
+                    appendToTextField(string: "Response: \(response)")
+                }
             } else {
                 appendToTextField(string: "No response")
             }
@@ -102,6 +104,7 @@ class TestController: UIViewController {
             break
         }
         appendToTextField(string: "contactHost complete")
+        client.close()
     }
     
     private func sendRequest(string: String, using client: TCPClient) -> String? {
