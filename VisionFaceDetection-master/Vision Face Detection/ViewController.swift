@@ -604,6 +604,7 @@ extension ViewController {
             print("contactHost error")
             print(error)
         }
+        client.close()
         let screenSize = UIScreen.main.bounds
         let label = UILabel(frame: CGRect(x: location.x, y: location.y, width: screenSize.size.width, height: screenSize.size.height))
         label.font = UIFont.preferredFont(forTextStyle: .headline)
